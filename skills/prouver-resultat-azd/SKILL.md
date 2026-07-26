@@ -13,6 +13,8 @@ Invocation: `$prouver-resultat-azd "Verifie le commit courant contre public-cont
 
 Verdict attendu: matrice claim-by-claim, commandes exactes, artefacts, provenance commit/agent, statut `verified`, `partial`, `blocked` ou `failed`.
 
+Lire [proof-matrix.md](references/proof-matrix.md) pour choisir une preuve adaptée à la surface sans confondre test local, readiness et approbation externe.
+
 ## Utiliser quand / Use when
 
 Utilise ce skill lorsqu'un changement, une release ou une affirmation doit etre verifie contre ses exigences actuelles.

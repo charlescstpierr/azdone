@@ -17,6 +17,8 @@ $inspecter-projet-azd "Trouve où le repo définit le contrat public d'onboardin
 
 Artefact attendu: `discovery.verdict`, chemins repo-locaux, sources, contradictions, blind spots, System Success Map delta, opportunités à fort signal et capability gaps anticipés.
 
+Lire [evidence-ladder.md](references/evidence-ladder.md) lorsque plusieurs sources se contredisent ou qu’une recherche externe devient nécessaire.
+
 ## Utiliser quand / Use when
 
 - le repository, ses traces ou son architecture doivent être inspectés;

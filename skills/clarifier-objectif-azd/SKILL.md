@@ -19,6 +19,8 @@ $clarifier-objectif-azd "Répare le flux de paiement sans casser les abonnements
 
 Artefact attendu: Boussole suffisamment fraîche, `risk_level`, `understanding.verdict`, `confidence`, `zero_assumption_gate`, Language Pack minimal et au plus une question matérielle.
 
+Lire [decision-card.md](references/decision-card.md) lorsqu’une décision matérielle exige trois choix comparables.
+
 ## Utiliser quand / Use when
 
 - l'objectif est large ou incomplet / the goal is broad or underspecified;
