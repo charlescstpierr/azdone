@@ -1,0 +1,4 @@
+interface:
+  display_name: "00 · Initialiser le projet"
+  short_description: "Fixer une fois les conventions AZDone du dépôt"
+  default_prompt: "Utilise $initialiser-projet-azd pour configurer une seule fois les conventions AZDone de ce dépôt."

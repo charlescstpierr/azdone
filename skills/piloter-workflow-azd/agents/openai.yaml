@@ -1,0 +1,4 @@
+interface:
+  display_name: "01 · Piloter le workflow"
+  short_description: "Router le projet de la carte au résultat prouvé"
+  default_prompt: "Utilise $piloter-workflow-azd pour choisir et exécuter le plus petit parcours AZDone vérifiable."

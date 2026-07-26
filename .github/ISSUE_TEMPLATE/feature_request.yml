@@ -1,0 +1,33 @@
+name: Proposition
+description: Proposer une amélioration bornée et testable
+title: "[Proposition] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème observable
+      description: Quel échec, coût ou frottement répété cherchez-vous à corriger ?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: Donnez la recommandation, la meilleure alternative et le statu quo.
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Trade-offs
+      description: Coût, délai, complexité, risque, réversibilité et compatibilité.
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: Preuve proposée
+      description: Quel test ou scénario pourrait falsifier cette idée ?
+    validations:
+      required: true
+

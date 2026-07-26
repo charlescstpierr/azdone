@@ -1,0 +1,4 @@
+interface:
+  display_name: "10 · Réviser la qualité"
+  short_description: "Réviser contrat, correction, sécurité et simplicité"
+  default_prompt: "Utilise $reviser-qualite-azd pour une review indépendante proportionnée au risque."

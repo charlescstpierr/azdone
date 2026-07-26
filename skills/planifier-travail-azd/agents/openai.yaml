@@ -1,0 +1,4 @@
+interface:
+  display_name: "06 · Planifier le travail"
+  short_description: "Créer cartes, graphe, DAG, preuve et readiness"
+  default_prompt: "Utilise $planifier-travail-azd pour transformer le résultat en cartes Ready et ordre causal."

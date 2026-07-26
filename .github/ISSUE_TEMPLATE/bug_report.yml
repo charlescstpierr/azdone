@@ -1,0 +1,48 @@
+name: Bug
+description: Signaler un comportement AZDone reproductible
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Ne publiez aucun secret. Pour une vulnérabilité, utilisez SECURITY.md."
+  - type: input
+    id: host
+    attributes:
+      label: Host et version
+      placeholder: "Codex CLI, Claude Code, autre"
+    validations:
+      required: true
+  - type: input
+    id: skill
+    attributes:
+      label: Skill concerné
+      placeholder: "piloter-workflow-azd"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction minimale
+      description: Incluez la demande, les étapes et les données non sensibles nécessaires.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Résultat attendu
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Résultat observé
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Preuves et verdict AZDone
+      description: Logs nettoyés, test, capture ou verdict partial/blocked/failed.
+    validations:
+      required: false
+

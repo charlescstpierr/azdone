@@ -1,0 +1,4 @@
+interface:
+  display_name: "12 · Surveiller la livraison"
+  short_description: "Observer, détecter et récupérer sous autorité"
+  default_prompt: "Utilise $surveiller-livraison-azd en mode fail-closed pour comparer la livraison à sa baseline, exiger une evidence fraîche et récupérer si nécessaire."

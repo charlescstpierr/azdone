@@ -1,0 +1,4 @@
+interface:
+  display_name: "Socle · Vérifier la readiness"
+  short_description: "Anticiper prérequis, accès, outils et preuves"
+  default_prompt: "Utilise $verifier-readiness-azd pour produire un Readiness Forecast avant Ready, exécution ou Done."

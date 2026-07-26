@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Rapport de sécurité privé
+    url: https://github.com/charlescstpierr/azdone/security/advisories/new
+    about: Ne publiez jamais une vulnérabilité ou un secret dans une issue.
+

@@ -1,0 +1,4 @@
+interface:
+  display_name: "11 · Livrer le changement"
+  short_description: "Intégrer et livrer sous autorité explicite"
+  default_prompt: "Utilise $livrer-changement-azd pour intégrer le résultat prouvé et livrer seulement ce qui est autorisé."

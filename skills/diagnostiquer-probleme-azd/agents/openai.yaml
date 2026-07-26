@@ -1,0 +1,4 @@
+interface:
+  display_name: "04 · Diagnostiquer le problème"
+  short_description: "Reproduire et prouver la cause sans corriger"
+  default_prompt: "Utilise $diagnostiquer-probleme-azd pour isoler la cause racine sans implémenter de correctif."

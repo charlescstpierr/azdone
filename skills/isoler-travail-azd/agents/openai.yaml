@@ -1,0 +1,4 @@
+interface:
+  display_name: "07 · Isoler le travail"
+  short_description: "Ouvrir seulement les lanes indépendantes utiles"
+  default_prompt: "Utilise $isoler-travail-azd pour dimensionner et isoler les lanes selon le risque réel."

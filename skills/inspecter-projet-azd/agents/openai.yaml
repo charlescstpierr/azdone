@@ -1,0 +1,4 @@
+interface:
+  display_name: "03 · Inspecter le projet"
+  short_description: "Ancrer dépôt, sources, capacités et opportunités"
+  default_prompt: "Utilise $inspecter-projet-azd pour établir les faits locaux et externes avant de décider."

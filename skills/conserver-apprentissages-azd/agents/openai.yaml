@@ -1,0 +1,4 @@
+interface:
+  display_name: "13 · Conserver les apprentissages"
+  short_description: "Promouvoir seulement une mémoire prouvée et bornée"
+  default_prompt: "Utilise $conserver-apprentissages-azd en mode fail-closed pour gérer une mémoire branch-scoped, traçable et révalidable."

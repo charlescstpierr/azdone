@@ -1,0 +1,4 @@
+interface:
+  display_name: "02 · Clarifier l’objectif"
+  short_description: "Fixer Boussole, risque et décision matérielle"
+  default_prompt: "Utilise $clarifier-objectif-azd pour clarifier ce résultat une décision matérielle à la fois."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "14 · Améliorer le workflow"
+  short_description: "Tester une évolution protégée du skill set"
+  default_prompt: "Utilise $ameliorer-workflow-azd avec Longitudinal freeze, baseline/evaluator freeze, train/held-out/protected separation, observation window, drift detection, rollback, host evidence et verdict fail-closed."

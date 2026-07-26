@@ -1,0 +1,4 @@
+interface:
+  display_name: "09 · Prouver le résultat"
+  short_description: "Distinguer preuve, readiness et approbation réelle"
+  default_prompt: "Utilise $prouver-resultat-azd pour vérifier chaque claim avec une preuve fraîche adaptée à sa surface."

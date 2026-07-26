@@ -1,0 +1,4 @@
+interface:
+  display_name: "05 · Concevoir l’expérience"
+  short_description: "Décider la surface humaine avant le code"
+  default_prompt: "Utilise $concevoir-experience-azd pour rendre la décision visible et vérifiable avant le code."

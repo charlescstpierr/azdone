@@ -1,0 +1,4 @@
+interface:
+  display_name: "08 · Construire la solution"
+  short_description: "Implémenter le plus petit changement valide"
+  default_prompt: "Utilise $construire-solution-azd pour construire la carte Ready avec son contrat de preuve."
