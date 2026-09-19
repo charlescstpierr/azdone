@@ -40,7 +40,7 @@ Une valeur explicite dans `actions:` prime sur le niveau, sauf pour `never` et p
 - `ask`: poser une seule question matérielle avec recommandation, meilleure alternative et statu quo.
 - `never`: refuser et proposer la voie humaine. Ne peut jamais devenir `auto`, quel que soit le niveau.
 
-`spawn_agent` classe un CLI d'agent externe exécuté hors mode lecture seule (`codex exec` sans `-s read-only`, `claude -p` sans `--permission-mode plan` ni `--allowedTools` restreint, `agent -p` ou `cursor-agent -p` toujours, faute de mode lecture seule natif). Défauts: `guided`, `assisted`, `autonomous` en `ask`; `full` en `auto`. Un appel en lecture seule conforme à `models.adapters` reste non classé, donc autorisé.
+`spawn_agent` classe un CLI d'agent externe exécuté hors mode lecture seule (`codex exec` sans `-s read-only`, `claude -p` sans `--permission-mode plan` ni `--allowedTools` restreint, `agent -p` ou `cursor-agent -p` toujours, faute de mode lecture seule natif). Défauts: `guided`, `assisted`, `autonomous` en `ask`; `full` en `auto`. Un appel en lecture seule conforme à `models.adapters` reste non classé, donc autorisé. Exception : l'adaptateur Cursor (`agent -p`), dépourvu de mode lecture seule natif, reste classé `spawn_agent`.
 
 ## Conditions d'un `conditional`
 

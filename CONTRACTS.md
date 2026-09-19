@@ -290,7 +290,7 @@ it does not intercept native file-edit tools, so a Cursor file edit is not
 gated the way a Claude Code `Write`/`Edit` call is.
 
 The agent may write exactly one field in `trust.yaml` by itself: `autonomy:`,
-and only as an earned-trust promotion after five consecutive `verified` runs
+and only as an earned-trust promotion after `earn.promote_after` consecutive `verified` runs (five by default)
 without rollback, up to the configured `ceiling`. That write is logged in
 `.azdone/trust-ledger.md` in the same turn. Every other field in
 `trust.yaml` (`actions:`, `always_pause:`, `protected_paths:`,

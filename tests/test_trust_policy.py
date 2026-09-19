@@ -597,6 +597,80 @@ class WitnessAndLedgerTests(unittest.TestCase):
             self.assertEqual("", run_hook(claude_payload("echo x | tee /tmp/a", cwd=str(repo)), trust_file=trust).stdout.strip())
 
 
+class ReviewBypassRegressionTests(unittest.TestCase):
+    """Contournements trouvés en relecture indépendante ; chacun doit rester fermé."""
+
+    def _tmp(self):
+        import tempfile
+
+        return tempfile.TemporaryDirectory()
+
+    def _repo(self, tmp: str) -> tuple[Path, Path]:
+        repo = Path(tmp) / "repo"
+        (repo / ".azdone").mkdir(parents=True)
+        (repo / ".claude" / "hooks" / "azdone").mkdir(parents=True)
+        import shutil
+
+        shutil.copy(HOOK_PY, repo / ".claude" / "hooks" / "azdone" / "azd-trust-guard.py")
+        trust = repo / ".azdone" / "trust.yaml"
+        trust.write_text("autonomy: autonomous\nceiling: full\nenforcement: enforced\nactions:\n  push: auto\nprotected_paths:\n  - .azdone/trust.yaml\n  - .github/workflows/\n", encoding="utf-8")
+        return repo, trust
+
+    def _run(self, repo: Path, trust: Path, command: str) -> str:
+        return run_hook(claude_payload(command, cwd=str(repo)), trust_file=trust).stdout
+
+    def test_inline_interpreters_and_heredocs_cannot_write_trust_yaml_or_protected_paths(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            for command in (
+                "python3 -c \"open('.azdone/trust.yaml','w').write('autonomy: full')\"",
+                "perl -e 'open(F,\">.azdone/trust.yaml\")'",
+                "python3 << EOF\nopen('.azdone/trust.yaml','w')\nEOF",
+                "dd if=/tmp/x of=.azdone/trust.yaml",
+            ):
+                self.assertIn("toujours-pause", self._run(repo, trust, command), command)
+            self.assertIn("protégé", self._run(repo, trust, "node -e \"require('fs').writeFileSync('.github/workflows/ci.yml','x')\""))
+            self.assertEqual("", self._run(repo, trust, "cat .azdone/trust.yaml").strip())
+            self.assertEqual("", self._run(repo, trust, "python3 -c 'print(1)'").strip())
+
+    def test_only_the_real_trust_tool_gets_the_record_run_pass(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            (repo / "tools").mkdir()
+            trust.write_text(trust.read_text(encoding="utf-8").replace("autonomy: autonomous", "autonomy: full"), encoding="utf-8")
+            subprocess.run(["python3", str(HOOK_PY), "setup", "--repo", str(repo)], check=True, capture_output=True)
+            trust.write_text(trust.read_text(encoding="utf-8").replace("autonomy: full", "autonomy: autonomous"), encoding="utf-8")
+            self.assertIn("ledger", self._run(repo, trust, "git push origin feature"))
+            self.assertEqual("", self._run(repo, trust, "python3 .claude/hooks/azdone/azd-trust-guard.py record --run-id x --risk rapid --verdict verified").strip())
+            self.assertIn("ledger", self._run(repo, trust, "python3 ./tools/azd-trust-guard.py record --run-id x --risk rapid --verdict verified && git push origin feature"))
+
+    def test_patch_application_is_governed_when_protected_paths_exist(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            for command in ("git apply trust.patch", "git am 0001.patch", "git stash pop", "git restore --source=other .azdone/trust.yaml"):
+                self.assertTrue(self._run(repo, trust, command).strip(), command)
+
+    def test_relative_redirects_escaping_the_root_are_governed(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            self.assertIn("hors du dépôt", self._run(repo, trust, "echo x > ../../../../../../../etc/passwd"))
+            self.assertEqual("", self._run(repo, trust, "echo x > ../repo/notes.txt").strip())
+
+    def test_trust_yaml_edited_outside_record_is_detected_until_setup_realigns(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            subprocess.run(["python3", str(HOOK_PY), "setup", "--repo", str(repo)], check=True, capture_output=True)
+            self.assertEqual("", self._run(repo, trust, "git push origin feature").strip())
+            trust.write_text(trust.read_text(encoding="utf-8").replace("autonomy: autonomous", "autonomy: full"), encoding="utf-8")
+            reason = self._run(repo, trust, "git push origin feature")
+            self.assertIn("ne correspond pas au dernier niveau du ledger", reason)
+            self.assertEqual("", self._run(repo, trust, "ls").strip())
+            status = subprocess.run(["python3", str(HOOK_PY), "status", "--repo", str(repo)], capture_output=True, text=True).stdout
+            self.assertIn("modifié hors ledger", status)
+            subprocess.run(["python3", str(HOOK_PY), "setup", "--repo", str(repo)], check=True, capture_output=True)
+            self.assertEqual("", self._run(repo, trust, "git push origin feature").strip())
+
+
 class HookManifestTests(unittest.TestCase):
     def test_hooks_json_is_valid_and_points_to_guard_script(self) -> None:
         data = json.loads(read(HOOKS_JSON))

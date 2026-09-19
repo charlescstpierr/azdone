@@ -34,6 +34,22 @@ review:
 
 `source` vaut `host` pour le reviewer principal, `cli:<adaptateur>` pour un relecteur externe (`second_reviewer` ou panel). Un finding externe porte l'id `EXT-<n>-<code>` (ex. `EXT-1-SEC-01`).
 
+Bloc exigé d'un relecteur externe (dans le prompt envoyé sur stdin avec le context packet) ; toute sortie qui ne s'y conforme pas est ignorée et signalée dans `reviewer_evidence` :
+
+```yaml
+external_review:
+  reviewer: cli:<adaptateur>
+  findings:
+    - id: ""          # code libre, préfixé EXT-<n>- à la fusion
+      severity: critical | high | medium | low
+      file: ""
+      line_or_selector: ""
+      evidence: ""
+      impact: ""
+      action: ""
+  verdict_hint: accept | return-to-build   # indicatif seulement, jamais appliqué tel quel
+```
+
 ## Témoin D1 (`.azdone/conditions-ok`)
 
 Écrit par ce skill seul, sur `accept`, un `clé: valeur` par ligne :

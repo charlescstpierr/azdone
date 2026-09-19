@@ -40,7 +40,7 @@ Le skill rend `build` ([build-output.md](references/build-output.md)) avec les c
 ## Arrêt et interdits
 
 - Ne jamais écrire de code candidat avant un test rouge (TDD strict).
-- Garder le `smallest valid change` ; appliquer Ponytail : supprimer avant d'ajouter, réutiliser avant d'inventer, refuser les abstractions sans complexité réelle.
+- Garder le `smallest valid change` ; suivre les patterns project-native et appliquer Ponytail : supprimer avant d'ajouter, réutiliser avant d'inventer, refuser les abstractions sans complexité réelle.
 - Préserver safety, accessibility, les changements utilisateur et les tests existants.
 - Garder evaluator, reviewer, hidden oracle et protected regressions hors du write scope candidat.
 - Si le besoin reste ambigu, retourner à `$clarifier-objectif-azd` ou `$concevoir-experience-azd`.

@@ -5,7 +5,7 @@ description: "Piloter le parcours AZDone depuis un projet initialisé jusqu'à u
 
 # Étape 01 · Piloter le workflow
 
-Transformer un objectif naturel en résultat vérifié.
+Transformer un objectif naturel (natural-language) en résultat vérifié.
 
 ## Contract
 

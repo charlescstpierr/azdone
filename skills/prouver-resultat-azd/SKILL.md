@@ -5,7 +5,7 @@ description: "Prouver chaque affirmation avec des preuves fraîches adaptées à
 
 # Étape 09 · Prouver le résultat
 
-Prouve chaque affirmation avec une evidence fraiche et adaptee a la surface reelle.
+Prouver chaque affirmation avec une preuve fraîche et adaptée à la surface réelle (surface-appropriate).
 
 ## Quick start
 

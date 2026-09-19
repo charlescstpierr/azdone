@@ -337,7 +337,7 @@ def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> V
         return Verdict("always_pause", "customer_message", ALWAYS_PAUSE["customer_message"])
     if SQL_DESTRUCTIVE.search(segment) or SQL_UNBOUNDED.search(segment):
         return Verdict("always_pause", "delete_data", ALWAYS_PAUSE["delete_data"])
-    if is_trust_tool(head, args):
+    if is_trust_tool(head, args, cwd, trust_root):
         return Verdict("action", "record_run", "journal de confiance (azd-trust-guard.py record|witness)")
     spawn = classify_spawn_agent(head, args)
     if spawn:
@@ -388,15 +388,32 @@ def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> V
     return None
 
 
-def is_trust_tool(head: str, args: list[str]) -> bool:
-    script = ""
+def is_trust_tool(head: str, args: list[str], cwd: str = "", trust_root: str = "") -> bool:
+    """Vrai seulement pour le vrai outil de confiance, résolu dans un répertoire de hooks connu."""
     if head in ("python3", "python") and args:
-        script = os.path.basename(args[0])
-        sub = args[1] if len(args) > 1 else ""
+        script, sub = args[0], (args[1] if len(args) > 1 else "")
     else:
-        script = head
-        sub = args[0] if args else ""
-    return script == "azd-trust-guard.py" and sub in ("record", "witness", "status")
+        script, sub = head, (args[0] if args else "")
+    if os.path.basename(script) != "azd-trust-guard.py" or sub not in ("record", "witness", "status", "setup"):
+        return False
+    candidate = script if os.path.isabs(script) else os.path.join(cwd or trust_root or os.getcwd(), script)
+    try:
+        real = os.path.realpath(candidate)
+    except OSError:
+        return False
+    return real in trusted_tool_paths(trust_root)
+
+
+def trusted_tool_paths(trust_root: str) -> set[str]:
+    paths = {os.path.realpath(__file__)}
+    for env in ("CLAUDE_PLUGIN_ROOT", "CURSOR_PLUGIN_ROOT"):
+        base = os.environ.get(env)
+        if base:
+            paths.add(os.path.realpath(os.path.join(base, "hooks", "azd-trust-guard.py")))
+    if trust_root:
+        for sub in (".claude/hooks/azdone", ".cursor/hooks/azdone", ".agents/azdone"):
+            paths.add(os.path.realpath(os.path.join(trust_root, sub, "azd-trust-guard.py")))
+    return paths
 
 
 def classify_spawn_agent(head: str, args: list[str]) -> Verdict | None:
@@ -433,12 +450,16 @@ def outside_root_write(segment: str, words: list[str], cwd: str, trust_root: str
     targets = list(redirect_targets)
     if is_write and len(words) > 1:
         targets.append(words[-1])
+    root = (trust_root or "").rstrip("/") + "/"
     for target in targets:
         cleaned = target.strip("'\"")
         if cleaned.startswith("~") or cleaned.startswith("$HOME"):
             return Verdict("protected", "outside_root", f"écriture hors du dépôt ({cleaned})")
+        if ".." in cleaned.split("/") and trust_root:
+            resolved = os.path.normpath(os.path.join(cwd or trust_root, cleaned))
+            if not resolved.startswith(root) and not resolved.startswith(("/tmp/", "/private/tmp/")):
+                return Verdict("protected", "outside_root", f"écriture hors du dépôt ({cleaned})")
         if cleaned.startswith("/") and not cleaned.startswith(("/tmp/", "/private/tmp/", "/dev/null", "/dev/std")):
-            root = (trust_root or "").rstrip("/") + "/"
             if not cleaned.startswith(root):
                 return Verdict("protected", "outside_root", f"écriture hors du dépôt ({cleaned})")
     return None
@@ -509,6 +530,8 @@ def classify_git(args: list[str], cwd: str) -> Verdict | None:
         return Verdict("always_pause", "delete_data", ALWAYS_PAUSE["delete_data"])
     if sub in ("filter-branch", "filter-repo", "replace") or (sub == "reflog" and "expire" in rest) or (sub == "gc" and any(a.startswith("--prune") for a in rest)):
         return Verdict("always_pause", "rewrite_shared_history", ALWAYS_PAUSE["rewrite_shared_history"])
+    if sub in ("apply", "am") or (sub == "stash" and rest[:1] in (["pop"], ["apply"])) or (sub == "restore" and any(a.startswith("--source") for a in rest)):
+        return Verdict("protected", "patch_apply", f"git {sub} peut écrire des chemins protégés sans les nommer")
     if sub == "credential" or (sub == "config" and any("credential" in a for a in rest)):
         return Verdict("always_pause", "credentials", ALWAYS_PAUSE["credentials"])
     return None
@@ -659,11 +682,21 @@ def protected_path_write(segment: str, words: list[str], cwd: str, protected: li
     trust_candidates = (".azdone/trust.yaml", ".azdone/trust-ledger.md")
     all_protected = list(protected) + [".azdone/trust.yaml"]
     hits = [w for w in normalized_words if any(_path_matches(w, p) for p in all_protected)]
+    # Chemin cité à l'intérieur d'un argument (python3 -c "...", perl -e, dd of=, heredoc) : recherche brute.
+    for entry in all_protected:
+        needle = entry.strip().removeprefix("./").rstrip("/")
+        if needle and re.search(r"(^|[^\w./-])" + re.escape(needle) + r"(?![\w-])", segment):
+            hits.append(entry.strip().removeprefix("./"))
     if not hits:
         return None
     head = os.path.basename(words[0]) if words else ""
     has_redirect = re.search(r"(^|[^<>])>{1,2}\s*\S", segment) is not None
+    interpreter_inline = head in ("python", "python3", "perl", "node", "ruby", "php", "deno", "bun") and (
+        any(a in ("-c", "-e", "--eval") for a in words[1:]) or "<<" in segment
+    )
     is_read_only = head in READ_ONLY_COMMANDS and not has_redirect and not (head in ("sed", "perl") and any(a.startswith("-i") for a in words))
+    if interpreter_inline:
+        is_read_only = False
     if head == "git" and len(words) > 1 and words[1] in ("diff", "show", "log", "status", "blame", "grep", "ls-files"):
         is_read_only = True
     if is_read_only:
@@ -674,7 +707,9 @@ def protected_path_write(segment: str, words: list[str], cwd: str, protected: li
 
 
 def normalize_path(word: str, cwd: str, trust_root: str) -> str:
-    cleaned = word.strip("'\"").split("=", 1)[-1] if word.startswith("--") else word.strip("'\"")
+    cleaned = word.strip("'\"")
+    if "=" in cleaned and not cleaned.startswith(("/", "./", "~")):
+        cleaned = cleaned.split("=", 1)[-1]
     if cleaned.startswith("/") and trust_root:
         root = trust_root.rstrip("/") + "/"
         if cleaned.startswith(root):
@@ -815,7 +850,7 @@ def emit_deny(fmt: str, reason: str) -> None:
 
 
 def main() -> int:
-    if len(sys.argv) > 1 and sys.argv[1] in ("record", "witness", "status"):
+    if len(sys.argv) > 1 and sys.argv[1] in ("record", "witness", "status", "setup"):
         return run_subcommand(sys.argv[1:])
     fmt, command, cwd, file_path = read_payload()
     trust_file = find_trust_file(cwd)
@@ -831,6 +866,7 @@ def main() -> int:
         return 0
     protected = [str(p) for p in policy.get("protected_paths")] if isinstance(policy.get("protected_paths"), list) else []
     trust_root = os.path.dirname(os.path.dirname(os.path.abspath(trust_file)))
+    tampered = ledger_mismatch(policy, os.path.dirname(trust_file))
     if file_path:
         verdict = classify_file_write(file_path, cwd, protected, trust_root)
         reason = decide(verdict, policy, trust_file, cwd) if verdict else None
@@ -848,11 +884,32 @@ def main() -> int:
         verdict = classify(segment, cwd, protected, trust_root)
         if verdict is None:
             continue
+        if tampered and verdict.action != "record_run":
+            emit_deny(fmt, tampered)
+            return 0
         reason = decide(verdict, policy, trust_file, cwd)
         if reason:
             emit_deny(fmt, reason)
             return 0
     return 0
+
+
+def ledger_mismatch(policy: dict, azdone_dir: str) -> str | None:
+    """Refus si `autonomy:` de trust.yaml ne correspond plus au dernier niveau journalisé."""
+    rows = ledger_rows(ledger_path(policy, azdone_dir))
+    if not rows:
+        return None
+    last_level = ""
+    for row in reversed(rows):
+        if len(row) >= 10 and row[7]:
+            last_level = row[7]
+            break
+    level = str(policy.get("autonomy", "")).strip()
+    if last_level and level and last_level != level:
+        return (f"trust.yaml (autonomy: {level}) ne correspond pas au dernier niveau du ledger ({last_level}) : "
+                f"modification hors du circuit record. Un humain relance /azd-setup ou "
+                f"`azd-trust-guard.py setup` pour réaligner ; d'ici là toute action gouvernée est refusée.")
+    return None
 
 
 # --------------------------------------------------------------------------- sous-commandes
@@ -882,6 +939,8 @@ def run_subcommand(argv: list[str]) -> int:
     record.add_argument("--repo", default="")
     status = sub.add_parser("status", help="afficher le niveau, la série et le témoin")
     status.add_argument("--repo", default="")
+    setup = sub.add_parser("setup", help="journaliser le niveau courant après /azd-setup (réaligne le ledger)")
+    setup.add_argument("--repo", default="")
     args = parser.parse_args(argv)
 
     repo = os.path.abspath(args.repo or os.getcwd())
@@ -911,6 +970,21 @@ def run_subcommand(argv: list[str]) -> int:
         print("conditions : satisfaites" if problem is None else f"conditions : non satisfaites ({problem})")
         return 0
 
+    if args.command == "setup":
+        path = ledger_path(policy, azdone_dir)
+        existing = open(path, encoding="utf-8").read() if os.path.isfile(path) else ""
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8") as handle:
+            if "| date |" not in existing:
+                if not existing.strip():
+                    handle.write("# Trust ledger AZDone\n\n")
+                handle.write(LEDGER_HEADER + "\n" + LEDGER_SEPARATOR + "\n")
+            date = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            level = str(policy.get("autonomy", "assisted")).strip()
+            handle.write(f"| {date} | setup | - | - | - | - | - | {level} | 0 | setup |\n")
+        print(f"ledger réaligné sur autonomy: {policy.get('autonomy', 'assisted')}")
+        return 0
+
     if args.command == "status":
         level = str(policy.get("autonomy", "assisted"))
         streak = ledger_streak(policy, azdone_dir)
@@ -921,6 +995,8 @@ def run_subcommand(argv: list[str]) -> int:
         print(f"enforcement: {policy.get('enforcement', 'declared')}")
         print(f"série verified: {streak}")
         print("témoin: " + ("absent" if witness_data is None else ("valide" if problem is None else f"invalide ({problem})")))
+        mismatch = ledger_mismatch(policy, azdone_dir)
+        print("intégrité: " + ("ok" if mismatch is None else "trust.yaml modifié hors ledger"))
         return 0
 
     return record_run(args, policy, trust_file, azdone_dir)
@@ -953,7 +1029,7 @@ def ledger_streak(policy: dict, azdone_dir: str) -> int:
         if len(row) < 10:
             continue
         event = row[9]
-        if event.startswith(("promotion:", "demotion:")):
+        if event.startswith(("promotion:", "demotion:")) or event == "setup":
             break
         if event != "run":
             continue

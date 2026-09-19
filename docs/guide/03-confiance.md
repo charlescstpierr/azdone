@@ -26,7 +26,8 @@ actions `auto`, et aucune phrase de session ne les débloque non plus.
 `codex exec` sans `-s read-only`, `claude -p` sans `--permission-mode plan`
 ni `--allowedTools` restreint, `agent -p` / `cursor-agent -p` (toujours,
 faute de mode lecture seule vérifié). Un appel en lecture seule conforme à
-`models.adapters` n'est pas classé et reste autorisé.
+`models.adapters` n'est pas classé et reste autorisé, sauf l'adaptateur
+Cursor (`agent -p`), sans mode lecture seule natif, qui reste classé.
 
 `autonomous` est le niveau par défaut recommandé par `/azd-setup`. Une
 valeur explicite dans `actions:` prime sur le niveau, sauf pour `never` et la

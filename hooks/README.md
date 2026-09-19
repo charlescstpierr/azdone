@@ -44,7 +44,7 @@ Limites connues, volontaires : `git rebase`, `git reset --hard`, `git checkout -
 
 ## Ledger et promotion : `record`
 
-`python3 <hooks>/azd-trust-guard.py record --run-id <id> --risk <r> --verdict verified|partial|blocked|failed [--rollback] [--override "<phrase>"] [--actions "<liste>"]` ajoute une ligne au ledger (`earn.ledger`, tableau Markdown `| date | run_id | risk | verdict | actions_auto | rollback | override | niveau_effectif | série | événement |`), calcule la série de runs `verified` consécutifs sans rollback depuis la dernière promotion ou rétrogradation, puis, si `earn.enabled`, monte `autonomy:` d'un cran à `earn.promote_after` (borné par `ceiling`) ou descend d'un cran sur `failed` ou `--rollback`. Il ne réécrit que la ligne `autonomy:` de `trust.yaml`. C'est la seule écriture de `trust.yaml` que le hook autorise à l'agent ; toute autre reste toujours-pause. `status` affiche niveau, plafond, mode, série et validité du témoin. Sans hook (Codex, mode déclaré), `/azd` applique la même règle à la main.
+`python3 <hooks>/azd-trust-guard.py record --run-id <id> --risk <r> --verdict verified|partial|blocked|failed [--rollback] [--override "<phrase>"] [--actions "<liste>"]` ajoute une ligne au ledger (`earn.ledger`, tableau Markdown `| date | run_id | risk | verdict | actions_auto | rollback | override | niveau_effectif | série | événement |`), calcule la série de runs `verified` consécutifs sans rollback depuis la dernière promotion ou rétrogradation, puis, si `earn.enabled`, monte `autonomy:` d'un cran à `earn.promote_after` (borné par `ceiling`) ou descend d'un cran sur `failed` ou `--rollback`. Il ne réécrit que la ligne `autonomy:` de `trust.yaml`. C'est la seule écriture de `trust.yaml` que le hook autorise à l'agent ; toute autre reste toujours-pause. `status` affiche niveau, plafond, mode, série, validité du témoin et intégrité. `setup` journalise le niveau courant après `/azd-setup` et réaligne le ledger. Sans hook (Codex, mode déclaré), `/azd` applique la même règle à la main.
 
 `<hooks>` vaut `${CLAUDE_PLUGIN_ROOT}/hooks` en plugin, `.claude/hooks/azdone` ou `.cursor/hooks/azdone` après `scripts/install.sh`, `.agents/azdone` sous Codex.
 
@@ -56,6 +56,10 @@ Limites connues, volontaires : `git rebase`, `git reset --hard`, `git checkout -
 | Cursor | `{"hook_event_name":"beforeShellExecution","command":"...","cwd":"...","workspace_roots":["..."]}` | `{"permission":"deny","user_message":"...","agent_message":"..."}` | exit 0, aucune sortie |
 
 Cursor envoie aussi `hook_event_name` ; le format Claude Code se reconnaît à la présence de `tool_input` ou à `hook_event_name == "PreToolUse"`.
+
+## Intégrité de trust.yaml
+
+Le hook compare `autonomy:` de `trust.yaml` au dernier `niveau_effectif` du ledger. S'ils diffèrent, le fichier a été modifié hors du circuit `record` (édition manuelle, script, patch) : toute action gouvernée est refusée jusqu'à ce qu'un humain relance `/azd-setup` ou `azd-trust-guard.py setup`. Les commandes non gouvernées (`ls`, tests) passent. Cette vérification ne repose sur aucun secret : un agent qui falsifie à la fois `trust.yaml` et le ledger le fait délibérément, et les deux fichiers sont versionnés, donc visibles dans `git diff`. Le hook n'a jamais accès au contenu d'un script exécuté : `python3 script.py` reste non classé ; c'est cette vérification d'intégrité, et non la classification, qui couvre ce cas.
 
 ## Sans python3
 

@@ -15,7 +15,7 @@ actions:                      # une valeur par action, parmi auto | conditional 
   external_message: ask         # envoyer un message à un client ou à un tiers.
   delete_data: never            # supprimer des données ou des branches non fusionnées. Toujours-pause.
   rewrite_shared_history: never # réécrire l'historique Git partagé. Toujours-pause.
-  spawn_agent: ask               # lancer un CLI d'agent externe hors mode lecture seule (codex exec, claude -p, agent -p sans restriction). Défauts: guided/assisted/autonomous ask, full auto. Un appel en lecture seule conforme à models.adapters reste non classé.
+  spawn_agent: ask               # lancer un CLI d'agent externe hors mode lecture seule (codex exec, claude -p, agent -p sans restriction). Défauts: guided/assisted/autonomous ask, full auto. Un appel en lecture seule conforme à models.adapters reste non classé, sauf l'adaptateur Cursor (agent -p) qui reste classé faute de mode lecture seule natif.
 
 conditions:                   # conditions requises pour qu'une action `conditional` devienne automatique. Vérifiées par le hook via le témoin .azdone/conditions-ok, jamais par lecture directe de trust.yaml.
   require_green_ci: true        # la CI doit être verte sur le commit courant (champ `ci` du témoin).
@@ -51,7 +51,7 @@ models:                        # routage des rôles vers un modèle natif ou un 
     builder: host:default            # écriture bornée au write_scope.
     verifier: host:default           # exécution des preuves.
     reviewer: host:strong             # relecture indépendante.
-    second_reviewer: cli:codex        # second avis externe, traité comme donnée non fiable. Exemple de slug exact: cli:codex:o3-mini.
+    second_reviewer: cli:codex        # second avis externe, traité comme donnée non fiable. Forme avec slug exact: cli:codex:<slug> (slug confirmé par azd-setup, jamais inventé).
     watcher: host:small               # surveillance CI/PR, lecture seule.
   panels:                         # relecteurs supplémentaires au-delà de second_reviewer, même grammaire que roles.
     review: []                      # liste vide par défaut; ex: [cli:claude, host:strong].
