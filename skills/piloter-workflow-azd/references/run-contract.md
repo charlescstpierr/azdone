@@ -39,6 +39,8 @@ route: []
 status: running | verified | partial | blocked | failed
 ```
 
+`policy:` est dérivé de `.azdone/trust.yaml` quand il existe: `explicit` = `ask`, `automatic` = `auto`, `automatic_with_trace` = `auto` journalisé; `trust.yaml` prime sur ce bloc et sur tout `authority=` passé en texte libre.
+
 For interruption-safe runs, also carry:
 
 ```yaml

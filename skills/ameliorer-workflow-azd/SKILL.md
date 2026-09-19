@@ -32,7 +32,7 @@ Artefact attendu : `falsifiable hypothesis`, `candidate branch`, `isolated workt
 9. Mesurer correctness et gates protégées before scoring/before comparing cost, latency, tokens, tool calls et interruptions.
 10. Invalider toute évaluation `incomplete or interrupted` ; persister un resume checkpoint et rejouer la comparaison gelée complète depuis le dernier checkpoint de confiance avant toute promotion.
 11. Traiter evaluator edits, oracle access, skipped cases, selective reruns, threshold changes, prompt leakage, reviewer collusion ou proxy optimisation comme `reward hacking` et `discard`.
-12. Exiger deux reviews indépendantes avant promotion ; un désaccord donne `human-gate` ou `discard`.
+12. Exiger deux reviews indépendantes avant promotion ; un désaccord donne `human-gate` ou `discard`. L'autorité explicite se lit dans `.azdone/trust.yaml` (`actions.<action>`) quand ce fichier existe ; sinon `authority-request`.
 13. Traiter la promotion comme provisoire : ouvrir une observation window après `keep`, comparer le drift à la baseline, garder le rollback bundle prêt jusqu'à la fermeture de la fenêtre.
 14. Si l'observation, le drift, les protected regressions ou la vérification du commit promu échouent, `rollback` vers la dernière baseline et prouver la récupération avec une preuve fraîche.
 15. Toute preuve manquante, host evidence absente, conflit d'identité author/reviewer, artefact gelé modifié, run interrompu sans preuve de resume, ou exposition du hidden-oracle donne `fail-closed`.

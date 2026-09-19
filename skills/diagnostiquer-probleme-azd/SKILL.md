@@ -29,8 +29,9 @@ Artefact attendu: `diagnosis.verdict: diagnose-only | blocked | failed`, reprodu
 4. Isoler (`isolate`) la root cause suspectée en changeant une variable à la fois et marquer explicitement les hypothèses falsifiées.
 5. Obtenir de la fresh evidence pour chaque affirmation et séparer `author_evidence` de toute `reviewer_evidence`.
 6. Séparer l'auteur du diagnostic et le reviewer éventuel, sans modifier le candidate code.
-7. Lier la cause aux nœuds affectés du Project Decision Graph et identifier la première hypothèse invalidée.
-8. Rendre un verdict `diagnose-only`: reproduction, root cause prouvée ou cause la mieux soutenue, confiance, impact causal et blockers.
+7. Si délégué à un sous-agent, suivre `skills/azd/references/context-packet.md` et `model-routing.md` pour le rôle correspondant.
+8. Lier la cause aux nœuds affectés du Project Decision Graph et identifier la première hypothèse invalidée.
+9. Rendre un verdict `diagnose-only`: reproduction, root cause prouvée ou cause la mieux soutenue, confiance, impact causal et blockers.
 
 ## Sortie
 
@@ -42,5 +43,6 @@ Le skill rend `diagnosis` ([diagnosis-output.md](references/diagnosis-output.md)
 - Ne pas corriger, refactorer ou planifier la remédiation dans ce skill. Ne pas produire de patch, fix-forward ou remediation steps; le transfert sortant est un paquet de diagnostic seulement.
 - Fail closed si la reproduction est absente et que la cause n'est pas autrement prouvée.
 - Fail closed si aucune hypothèse concurrente n'est falsifiée ou si l'auteur et le reviewer partagent la même evidence sans observation indépendante.
+- Rapid : 0 sous-agent sauf justification écrite.
 
 Répondre dans la langue de l'utilisateur. Commandes, chemins, identifiants, gates et verdicts restent identiques en français et en anglais.

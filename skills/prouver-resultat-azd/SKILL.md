@@ -32,14 +32,17 @@ Lire [proof-matrix.md](references/proof-matrix.md) pour choisir une preuve adapt
 7. Exécuter le `carryover_gate`, incluant le discovery carryover gate, sans perdre `discovery.contradictions`, staleness/divergences de version, `discovery.blind_spots`, risks et failure modes avec path/source, puis oracles, findings, rollback ou claims incomplètes ; tout champ requis manquant va dans `dropped_fields`.
 8. Vérifier CLI/TUI seulement si la surface existe : `80x24`, `120x40`, clavier sans souris, stdout/stderr séparés, exit codes, SIGINT/interruption/annulation/timeout et texte non tronqué.
 9. Enregistrer la provenance : `agent_id`, role, worktree, commit vérifié, commit evaluator/oracle, commandes, environnement et artefacts.
-10. Construire un `evidence_graph` (claim, source, artifact, oracle ; supports, contradicts, derived_from, supersedes ; stale, superseded, contradicted, `revalidation_condition`).
-11. Rendre trois verdicts distincts : `functional_proof` (le produit fait-il ce qui est promis), `approval_readiness` (le bundle satisfait-il les exigences actuelles des écosystèmes ciblés) et `external_approval` (une autorité externe l'a-t-elle réellement approuvé ; sans soumission et verdict observé, rester `not-requested`).
-12. En cas d'échec, identifier la première hypothèse causalement invalidée et la gate de retour, sans renvoyer systématiquement au build.
-13. Classer le drift et marquer toute affirmation non prouvée `partial`, `blocked` ou `failed`.
+10. Rendre `ci` d'après le dernier run CI observé sur le commit vérifié, `unknown` sinon ; `reviser-qualite-azd` reprend `ci` et `commit` tels quels pour le témoin D1.
+11. Si délégué à un sous-agent, suivre `skills/azd/references/context-packet.md` et `model-routing.md` pour le rôle correspondant.
+12. Construire un `evidence_graph` (claim, source, artifact, oracle ; supports, contradicts, derived_from, supersedes ; stale, superseded, contradicted, `revalidation_condition`).
+13. Rendre trois verdicts distincts : `functional_proof` (le produit fait-il ce qui est promis), `approval_readiness` (le bundle satisfait-il les exigences actuelles des écosystèmes ciblés) et `external_approval` (une autorité externe l'a-t-elle réellement approuvé ; sans soumission et verdict observé, rester `not-requested`).
+14. Après un `functional_proof` rendu, mettre à jour la feature map ([feature-map-template.md](references/feature-map-template.md)) ; elle documente la dernière preuve, jamais un substitut à une preuve fraîche.
+15. En cas d'échec, identifier la première hypothèse causalement invalidée et la gate de retour, sans renvoyer systématiquement au build.
+16. Classer le drift et marquer toute affirmation non prouvée `partial`, `blocked` ou `failed`.
 
 ## Sortie
 
-Le skill rend un bloc `verification` documenté dans [verify-output.md](references/verify-output.md) : `commit`, `worktree`, `provenance`, `detected_surfaces`, `surface_gates`, `evaluator`, `carryover_gate`, `evidence_graph`, `matrix`, `readiness_usage`, `functional_proof`, `approval_readiness`, `external_approval`, `causal_return`, `status`. Le coeur en est une `claim-by-claim evidence matrix` avec `claim`, `status`, `evidence`, `freshness`, `oracle` et `risk`.
+Le skill rend un bloc `verification` documenté dans [verify-output.md](references/verify-output.md) : `commit`, `ci`, `worktree`, `provenance`, `detected_surfaces`, `surface_gates`, `evaluator`, `carryover_gate`, `evidence_graph`, `matrix`, `readiness_usage`, `functional_proof`, `approval_readiness`, `external_approval`, `causal_return`, `status`. Le coeur en est une `claim-by-claim evidence matrix` avec `claim`, `status`, `evidence`, `freshness`, `oracle` et `risk`.
 
 ## Arrêt et interdits
 
@@ -47,5 +50,6 @@ Le skill rend un bloc `verification` documenté dans [verify-output.md](referenc
 - Fail closed si un `dropped_field` requis existe ou si sa freshness boundary ne correspond plus au commit/environnement vérifié, ou si l'evaluator a été modifié par l'auteur candidat.
 - Ne pas remplacer un check impossible par une supposition ; expliquer le blocker et la prochaine action sûre.
 - Ne jamais présenter une conformité locale, une checklist ou une readiness comme l'approbation réelle de Google, Apple, Microsoft, OpenAI, Anthropic ou toute autre autorité.
+- Rapid : 0 sous-agent sauf justification écrite.
 
 Répondre dans la langue de l'utilisateur. Commandes, chemins, identifiants, gates et verdicts restent identiques en français et en anglais.

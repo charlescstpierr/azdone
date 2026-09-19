@@ -29,7 +29,7 @@ Artefact attendu : `checkpoint`, `fresh verification` sur l'`integrated result`,
 6. Lancer une `fresh verification` sur le vrai `integrated result`, jamais seulement sur les branches sources ou des stale logs, en rejouant les checks natifs pertinents (tests, protected suite, types, lint, build, migrations, smoke et visuel si applicable).
 7. Produire un `context handoff` autonome avec état, commandes, artefacts, risques, prochaine transition, rollback conditions et le dernier `handoff_carryover` ; aucun champ requis ne peut être reconstruit silencieusement.
 8. Préparer documentation utile, migration/rollback guidance, `release notes`, canary, monitoring et `remaining risks`.
-9. Gate séparément `push`, `pull request`, `merge`, `submit-for-approval` et `deploy` ; sans autorité, retourner `authority-request`.
+9. Gate séparément `push`, `pull request`, `merge`, `submit-for-approval` et `deploy` ; sans autorité, retourner `authority-request`. L'autorité explicite se lit dans `.azdone/trust.yaml` (`actions.<action>`) quand ce fichier existe ; sinon `authority-request`.
 10. Traiter une soumission externe et son verdict comme des événements distincts : ne jamais transformer `approval_readiness: ready` en `external_approval: approved`.
 
 Voir [ship-details.md](references/ship-details.md) pour les règles complètes d'intégration, authority et rollback.

@@ -18,6 +18,7 @@ Artefact attendu : baseline, logs/metrics/traces horodatés, décision `continue
 - Une release doit être monitorée et comparée à une baseline.
 - Un incident survient et exige preuve, mitigation et root cause séparées.
 - Un canary ou un rollback autorisé doit être conduit ou préparé.
+- Observation d'une PR ou d'une CI via `agents/azd-watcher.md` (lecture seule, réveil par `/loop` sous Claude Code et Cursor).
 
 ## Procédure
 
@@ -25,7 +26,7 @@ Artefact attendu : baseline, logs/metrics/traces horodatés, décision `continue
 2. Capturer une `baseline` comparable avant changement avec les mêmes requêtes et fenêtres.
 3. Choisir les signaux : `logs`, `metrics`, `traces`, erreurs, latence, saturation, disponibilité et indicateurs produit.
 4. Geler les seuils de success, hold, canary-stop, incident-escalation et rollback avant toute mutation de `production`.
-5. Commencer en lecture seule ; ne pas déduire l'autorité de mutation depuis l'accès observability, et vérifier l'`explicit authority` avant canary, traffic shift, config change, deploy ou rollback, sinon retourner `authority-request`.
+5. Commencer en lecture seule ; ne pas déduire l'autorité de mutation depuis l'accès observability, et vérifier l'`explicit authority` avant canary, traffic shift, config change, deploy ou rollback, sinon retourner `authority-request`. L'autorité explicite se lit dans `.azdone/trust.yaml` (`actions.<action>`) quand ce fichier existe ; sinon `authority-request`.
 6. Déclarer les `host_capabilities` réellement disponibles (`observability`, `traffic_control`, `deploy_control`, `rollback_control`, `incident_channel`, `artifact_write`) : missing capability doit fail closed, retourner `blocked` avec `capability_gap` au lieu de simuler une observation, un canary ou un rollback.
 7. Augmenter l'exposition par paliers prédéterminés après une fenêtre complète et conforme ; stopper sur toute protected regression sans compenser un défaut critique par une bonne moyenne globale.
 8. Publier un `progress_snapshot` : `phase`, `status`, `done`, `total`, `blocked_by`, `last_checked_at`, `next_check`.

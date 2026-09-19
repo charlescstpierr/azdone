@@ -27,9 +27,11 @@ Verdict attendu: test `red` capture l'absence du champ, patch minimal, test `gre
 4. GREEN : implémenter uniquement ce qui rend ce test vert.
 5. REFACTOR : simplifier seulement après le vert sans changer le comportement, puis rejouer test et checks natifs proportionnés et enregistrer l'evidence `green`.
 6. Pour une surface humaine, implémenter chaque ligne de la `UI acceptance matrix` (états non nominaux, selectors/attributes publics exacts, clavier, live region, viewports, artefacts) et ajouter un test qui échoue si un état requis n'existe que dans la prose ou le JavaScript.
-7. Si l'exécution révèle un prérequis, une décision ou une idée hors carte, créer une carte `Draft` liée sans l'absorber, et poursuivre seulement si la carte active reste valide.
-8. Si une preuve échoue, classer la première hypothèse invalidée (`readiness | understanding | diagnosis | design | plan | build`) et retourner à cette gate, sans affaiblir le claim ni modifier l'oracle.
-9. Arrêter la tranche quand elle est verte et prouvée.
+7. Pour une surface `docs`, le gate rouge est un lien cassé, un exemple non exécutable ou une assertion de contenu manquante détectée par un check existant du dépôt ; sans check possible, sauter RED/GREEN et le dire dans le verdict.
+8. Si délégué à un sous-agent, suivre `skills/azd/references/context-packet.md` et `model-routing.md` pour le rôle correspondant.
+9. Si l'exécution révèle un prérequis, une décision ou une idée hors carte, créer une carte `Draft` liée sans l'absorber, et poursuivre seulement si la carte active reste valide.
+10. Si une preuve échoue, classer la première hypothèse invalidée (`readiness | understanding | diagnosis | design | plan | build`) et retourner à cette gate, sans affaiblir le claim ni modifier l'oracle.
+11. Arrêter la tranche quand elle est verte et prouvée.
 
 ## Sortie
 
@@ -42,6 +44,7 @@ Le skill rend `build` ([build-output.md](references/build-output.md)) avec les c
 - Préserver safety, accessibility, les changements utilisateur et les tests existants.
 - Garder evaluator, reviewer, hidden oracle et protected regressions hors du write scope candidat.
 - Si le besoin reste ambigu, retourner à `$clarifier-objectif-azd` ou `$concevoir-experience-azd`.
+- Rapid : 0 sous-agent sauf justification écrite.
 - Ne jamais remplacer un token normatif par un synonyme : paths, schema fields, IDs, roles, attributes et dimensions de viewport restent exacts.
 
 Répondre dans la langue de l'utilisateur. Commandes, chemins, identifiants, gates et verdicts restent identiques en français et en anglais.

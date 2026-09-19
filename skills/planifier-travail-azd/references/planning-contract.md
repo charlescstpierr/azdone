@@ -15,7 +15,7 @@ Pour CLI/API/SDK seulement lorsque ces surfaces changent, figer avant exécution
 
 - Chaque tâche contient action concrète, `author_id`, `reviewer_id`, dependencies, repo-local paths, commands exactes, write scope, exit condition, `red`, `green` et `proof`.
 - Chaque tâche ou lane déclare `handoff_inputs`, `handoff_outputs` et les relie à `requirement_to_proof`; aucun risque, contradiction, oracle, finding ou rollback requis ne peut disparaître.
-- `staffing` nomme `role`, `model_hint` optionnel, `reasoning_effort` optionnel et `expected_output` quand la tâche gagne à être déléguée; le host choisit le modèle réel.
+- `staffing` nomme `role`, `model_hint` optionnel, `reasoning_effort` optionnel et `expected_output` quand la tâche gagne à être déléguée; le host choisit le modèle réel. `role` doit correspondre à un rôle de `models.roles` de `.azdone/trust.yaml` (scout, builder, verifier, reviewer, second_reviewer, watcher); `model_hint`, s'il diffère du palier par défaut, doit être une valeur `host:` ou `cli:` valide selon `skills/azd/references/model-routing.md`.
 - `resume_context` conserve `base_commit`, `branch`, `worktree`, `current_step`, `remaining_work`, `failed_approaches`, `resume_commands`, `next_safe_action` et `blockers`.
 - Détecter l'overlap; sérialiser les écritures couplées.
 - Fixer ordering, intégration, recovery, resume checkpoints, rollback et evaluator location hors candidate write scope.

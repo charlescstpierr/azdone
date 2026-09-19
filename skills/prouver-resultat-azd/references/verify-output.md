@@ -5,6 +5,7 @@ Bloc de sortie complet du skill `prouver-resultat-azd`.
 ```yaml
 verification:
   commit: ""
+  ci: green | red | unknown
   worktree: ""
   provenance:
     agent_id: ""
@@ -59,3 +60,5 @@ verification:
   causal_return: none | readiness | understanding | diagnosis | design | plan | build
   status: verified | partial | blocked | failed
 ```
+
+`ci` reflète le dernier run CI observé sur `commit`, `unknown` en son absence. `reviser-qualite-azd` reprend `commit` et `ci` tels quels dans le témoin `.azdone/conditions-ok`.
