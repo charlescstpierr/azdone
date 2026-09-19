@@ -1,0 +1,4 @@
+interface:
+  display_name: "azd · Point d'entrée"
+  short_description: "Router une demande vers le playbook AZDone et rendre un verdict honnête"
+  default_prompt: "Utilise $azd pour router cette demande vers le playbook AZDone correspondant et rendre un verdict vérifiable."
