@@ -1,33 +1,59 @@
-# azd-trust-guard.sh
+# azd-trust-guard
 
-Hook de confiance AZDone. Il lit la commande shell qu'un agent s'apprête à exécuter, la compare à `.azdone/trust.yaml` et bloque celles que la politique n'autorise pas. Bash pur (awk/grep/sed); `jq` est utilisé s'il est présent, jamais requis. Il n'installe rien et n'est jamais requis pour invoquer un skill AZDone.
+Hook de confiance AZDone. Il lit la commande shell qu'un agent s'apprête à exécuter, la compare à `.azdone/trust.yaml` et refuse celles que la politique n'autorise pas. Deux fichiers : `azd-trust-guard.sh` (wrapper bash, builtins seulement) et `azd-trust-guard.py` (classifieur, bibliothèque standard Python 3, aucune dépendance). Il n'installe rien et n'est jamais requis pour invoquer un skill AZDone.
 
 ## Ce qu'il fait
 
-1. Détecte le format d'entrée (Claude Code ou Cursor).
-2. Cherche `.azdone/trust.yaml` en remontant depuis le `cwd` reçu, ou utilise `$AZD_TRUST_FILE` s'il est défini (utile aux tests).
-3. Si le fichier est absent, ou si `enforcement: declared`, il autorise sans rien afficher.
-4. Sinon, il classe la commande (`push`, `open_pr`, `merge`, `deploy`, `delete_data`, `install_global`, ou toujours-pause pour un force-push) et applique la valeur correspondante de `actions:` dans `trust.yaml` (`auto | conditional | ask | never`).
-5. `conditional` n'autorise que si `.azdone/conditions-ok` existe et date de moins de 30 minutes; ce témoin est écrit par `prouver-resultat-azd` ou `reviser-qualite-azd` après CI verte et revue indépendante acceptée.
-6. La liste toujours-pause (force-push sur branche partagée, suppression de données, etc.) bloque même si `actions.*: auto` ou `autonomy: full`.
+1. Détecte le format d'entrée (Claude Code ou Cursor) et décode le JSON avec un vrai parseur, jamais par expression régulière.
+2. Cherche `.azdone/trust.yaml` en remontant depuis le `cwd` reçu, ou utilise `$AZD_TRUST_FILE` s'il est défini (tests).
+3. Fichier absent ou `enforcement: declared` : autorise sans rien afficher. Politique `enforced` illisible : refuse (fail-closed).
+4. Découpe la commande sur `&&`, `||`, `;`, `|`, sauts de ligne, `$( )`, et ouvre `bash -c "..."` et `eval`. Chaque segment est classé ; le premier refus l'emporte.
+5. Applique `actions.<action>` (`auto | conditional | ask | never`) avec les défauts du niveau `autonomy` quand la clé manque. `conditional` n'autorise que si `.azdone/conditions-ok` existe et date de moins de 30 minutes ; ce témoin est écrit par `prouver-resultat-azd` ou `reviser-qualite-azd` après CI verte et review indépendante acceptée.
+6. La liste toujours-pause refuse quel que soit `actions.*` ou `autonomy: full`.
 
-Une commande non classée (`ls`, `rm -rf` sous `/tmp`, etc.) est autorisée sans aucune sortie.
+## Ce que le hook classe
+
+| Classe | Exemples détectés | Décision |
+| --- | --- | --- |
+| toujours-pause : force-push | `git push --force`, `-f`, `--force-with-lease`, `--mirror`, refspec `+main`, `+HEAD:main` | refus |
+| toujours-pause : suppression | `rm -r*` hors `/tmp` et hors dossiers d'artefacts (`node_modules`, `dist`, `build`, `.cache`, `target`, `.venv`...), tout chemin contenant `..`, `git branch -D`, `git push --delete` ou `:branche`, `git clean -f`, `find -delete`, `DROP TABLE`, `TRUNCATE TABLE`, `gh repo delete` | refus |
+| toujours-pause : credentials | `aws configure`, `gh auth`, `gcloud auth`, `az login`, `op`, `vault`, `docker login`, `npm login`, `git credential`, affectation `*_TOKEN=`, `*_SECRET=`, `*PASSWORD=`, `*API_KEY=` | refus |
+| toujours-pause : historique partagé | `git filter-branch`, `filter-repo`, `reflog expire`, `gc --prune` | refus |
+| toujours-pause : trust.yaml | toute écriture vers `.azdone/trust.yaml` (`>>`, `sed -i`, `cp`, `mv`...) | refus |
+| toujours-pause : message client | e-mail, SMS et messagerie client (`sendmail`, `mail`, SendGrid, Twilio, Mailgun, Postmark, Intercom, Customer.io...) | refus |
+| `commit` | `git commit` | selon politique |
+| `push` | `git push` vers une branche de travail | selon politique |
+| `open_pr` | `gh pr create`, `glab mr create` | selon politique |
+| `merge` | `gh pr merge`, `glab mr merge`, `git merge` quand la branche courante est `main`/`master`/`develop`/`release*`, `git push` ciblant une de ces branches | selon politique |
+| `deploy` | `terraform apply`, `kubectl apply`, `helm upgrade`, `vercel --prod`, `fly deploy`, `cdk deploy`, `pulumi up`, `gcloud run deploy`, `wrangler deploy`, `firebase deploy`, `docker push`, `npm publish`, `cargo publish`, `twine upload`, `make deploy`, `npm run deploy`, `./deploy.sh`, `gh release create`... | selon politique |
+| `install_global` | `sudo`, `npm i -g`, `pip install --user`, `pipx`, `brew`, `apt`, `dnf`, `pacman`, `cargo install`, `go install`, `gem install`, `curl ... \| sh` | selon politique |
+| `external_message` | `gh pr comment`, `gh pr review`, `gh issue comment`, `gh api` non GET, webhooks Slack, Discord, Telegram, Teams | selon politique |
+| chemin protégé | écriture (`>`, `cp`, `mv`, `sed -i`, script...) vers une entrée de `protected_paths` ; la lecture (`cat`, `grep`, `git diff`...) passe | refus (ask) |
+
+Le mot `deploy` seul ne déclenche rien : `cat docs/deploy.md` et `git push origin feature/deploy-fix` passent. Une commande non classée (`ls`, `npm test`, `pip install -r requirements.txt`) passe sans aucune sortie.
+
+Limites connues, volontaires : `git rebase`, `git reset --hard`, `git checkout -- <fichier>` et `rm <fichier>` sans récursion ne sont pas gouvernés (travail local ordinaire, récupérable ou trop fréquent). Le hook ne remplace ni la revue ni la politique déclarée que les skills appliquent d'eux-mêmes.
 
 ## Entrée et sortie par hôte
 
-| Hôte | Entrée (stdin JSON) | Blocage (stdout, exit 0) | Autorisation |
+| Hôte | Entrée (stdin JSON) | Refus (stdout, exit 0) | Autorisation |
 | --- | --- | --- | --- |
 | Claude Code | `{"hook_event_name":"PreToolUse","tool_input":{"command":"..."},"cwd":"..."}` | `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"..."}}` | exit 0, aucune sortie |
-| Cursor | `{"hook_event_name":"beforeShellExecution","command":"...","cwd":"...","workspace_roots":["..."],"sandbox":"...","conversation_id":"...","generation_id":"..."}` | `{"permission":"deny","user_message":"...","agent_message":"..."}` (`permission` accepte `allow \| ask \| deny`) | exit 0, aucune sortie |
+| Cursor | `{"hook_event_name":"beforeShellExecution","command":"...","cwd":"...","workspace_roots":["..."]}` | `{"permission":"deny","user_message":"...","agent_message":"..."}` | exit 0, aucune sortie |
 
-Cursor envoie aussi `hook_event_name`; le hook reconnaît le format Claude Code à la présence de `tool_input`, ou à `hook_event_name == "PreToolUse"`, jamais à la seule présence de `hook_event_name`.
+Cursor envoie aussi `hook_event_name` ; le format Claude Code se reconnaît à la présence de `tool_input` ou à `hook_event_name == "PreToolUse"`.
 
-## Activer ou désactiver
+## Sans python3
 
-- Activer: mettre `enforcement: enforced` dans `.azdone/trust.yaml` (proposé par `$azd-setup`).
-- Désactiver: remettre `enforcement: declared`, ou retirer `hooks/hooks.json` / `hooks/cursor-hooks.json` de l'installation du plugin.
-- Sans le hook, la politique reste déclarée et lisible dans `trust.yaml`; aucun skill ne dépend de son exécution.
+Le wrapper bash n'utilise que des builtins. Sans `python3` sur le PATH : aucune politique `enforced` trouvée, il autorise ; politique `enforced` trouvée, il refuse en expliquant que `python3` est requis ou qu'il faut repasser en `enforcement: declared`. Jamais d'autorisation silencieuse d'une politique qu'il ne peut pas appliquer.
+
+## Activer, enregistrer, désactiver
+
+- Plugin Claude Code ou Cursor : `hooks/hooks.json` et `hooks/cursor-hooks.json` enregistrent le hook automatiquement.
+- Installation par `scripts/install.sh` : le script copie le hook dans `.claude/hooks/azdone/` ou `.cursor/hooks/azdone/` et affiche le bloc à ajouter dans `.claude/settings.json` ou `.cursor/hooks.json`. Il ne modifie jamais ces fichiers lui-même.
+- `$azd-setup` n'écrit `enforcement: enforced` qu'après avoir vérifié qu'un hook est réellement enregistré.
+- Désactiver : remettre `enforcement: declared`, ou retirer l'entrée de hook. Sans le hook, la politique reste déclarée et lisible ; aucun skill ne dépend de son exécution.
 
 ## Codex
 
-Codex n'a pas de mécanisme de hook équivalent couvert ici. La confiance y reste déclarée seulement (`enforcement: declared`); aucun hook ne s'exécute et aucune commande n'y est bloquée par ce mécanisme.
+Codex n'a pas de mécanisme de hook couvert ici. La confiance y reste déclarée seulement (`enforcement: declared`) ; aucune commande n'y est bloquée par ce mécanisme.
