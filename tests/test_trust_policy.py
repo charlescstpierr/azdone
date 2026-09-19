@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TRUST_EXAMPLE = ROOT / "skills" / "azd-setup" / "references" / "trust.example.yaml"
 TRUST_POLICY = ROOT / "skills" / "azd" / "references" / "trust-policy.md"
 HOOK = ROOT / "hooks" / "azd-trust-guard.sh"
+HOOK_PY = ROOT / "hooks" / "azd-trust-guard.py"
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 CURSOR_HOOKS_JSON = ROOT / "hooks" / "cursor-hooks.json"
 
@@ -284,7 +285,10 @@ class HookClassificationTests(unittest.TestCase):
         with self._tmp() as tmp:
             trust = write_trust_yaml(Path(tmp), merge="conditional")
             self.assert_denied(run_hook(claude_payload("gh pr merge 12 --squash"), trust_file=trust), contains="conditions-ok")
-            (Path(tmp) / ".azdone" / "conditions-ok").write_text("ok", encoding="utf-8")
+            (Path(tmp) / ".azdone" / "conditions-ok").write_text(
+                "ci: green\nreview: accept\nreviewer_id: rev\nauthor_id: auth\nrisk: rapid\nfiles_changed: 1\nlanes: 0\n",
+                encoding="utf-8",
+            )
             self.assert_allowed(run_hook(claude_payload("gh pr merge 12 --squash"), trust_file=trust))
             stale = time.time() - 4000
             os.utime(Path(tmp) / ".azdone" / "conditions-ok", (stale, stale))
@@ -428,18 +432,192 @@ class HookClassificationTests(unittest.TestCase):
             self.assert_denied(run_hook(claude_payload("ls"), trust_file=trust), contains="fail-closed")
 
 
+class WitnessAndLedgerTests(unittest.TestCase):
+    """Sous-commandes witness, record, status et vérification des conditions par le hook."""
+
+    def _tmp(self):
+        import tempfile
+
+        return tempfile.TemporaryDirectory()
+
+    def _repo(self, tmp: str, autonomy: str = "autonomous", ceiling: str = "full", promote_after: int = 5,
+              conditions: str = "") -> tuple[Path, str]:
+        repo = Path(tmp) / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "init"], check=True, capture_output=True)
+        head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+        (repo / ".azdone").mkdir()
+        trust = repo / ".azdone" / "trust.yaml"
+        trust.write_text(
+            f"autonomy: {autonomy}   # niveau courant\nceiling: {ceiling}\nenforcement: enforced\n"
+            "actions:\n  merge: conditional\n  push: auto\n"
+            + (conditions or "conditions:\n  require_green_ci: true\n  require_independent_review: true\n  risk_ceiling: standard\n  max_files_changed: 40\n  max_lanes: 3\n")
+            + f"earn:\n  enabled: true\n  promote_after: {promote_after}\n  demote_on: [failed, rollback]\n  ledger: .azdone/trust-ledger.md\n",
+            encoding="utf-8",
+        )
+        return repo, head
+
+    def _tool(self, repo: Path, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["python3", str(HOOK_PY), *args, "--repo", str(repo)], capture_output=True, text=True, timeout=10)
+
+    def _witness(self, repo: Path, head: str, **overrides: str) -> subprocess.CompletedProcess:
+        values = {"commit": head, "ci": "green", "review": "accept", "reviewer-id": "rev", "author-id": "auth",
+                  "risk": "standard", "files-changed": "3", "lanes": "1"}
+        values.update(overrides)
+        args = [arg for key, value in values.items() for arg in (f"--{key}", value)]
+        return self._tool(repo, "witness", *args)
+
+    def _merge(self, repo: Path) -> subprocess.CompletedProcess:
+        return run_hook(claude_payload("gh pr merge 1 --squash", cwd=str(repo)), trust_file=repo / ".azdone" / "trust.yaml")
+
+    def test_witness_written_by_tool_unlocks_conditional_merge(self) -> None:
+        with self._tmp() as tmp:
+            repo, head = self._repo(tmp)
+            self.assertIn("aucun témoin", json.loads(self._merge(repo).stdout)["hookSpecificOutput"]["permissionDecisionReason"])
+            result = self._witness(repo, head)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("conditions : satisfaites", result.stdout)
+            content = (repo / ".azdone" / "conditions-ok").read_text(encoding="utf-8")
+            for key in ("commit:", "ci: green", "review: accept", "reviewer_id: rev", "author_id: auth", "risk: standard", "files_changed: 3", "lanes: 1", "written_at:"):
+                self.assertIn(key, content)
+            self.assertEqual("", self._merge(repo).stdout.strip())
+
+    def test_each_condition_is_checked_against_the_witness(self) -> None:
+        with self._tmp() as tmp:
+            repo, head = self._repo(tmp)
+            cases = (
+                ({"ci": "red"}, "require_green_ci"),
+                ({"reviewer-id": "auth"}, "require_independent_review"),
+                ({"risk": "critical"}, "risk_ceiling"),
+                ({"files-changed": "41"}, "max_files_changed"),
+                ({"lanes": "4"}, "max_lanes"),
+                ({"commit": "deadbeef"}, "HEAD"),
+            )
+            for overrides, expected in cases:
+                self._witness(repo, head, **overrides)
+                reason = json.loads(self._merge(repo).stdout)["hookSpecificOutput"]["permissionDecisionReason"]
+                self.assertIn(expected, reason, overrides)
+
+    def test_stale_witness_and_return_to_build_deny(self) -> None:
+        with self._tmp() as tmp:
+            repo, head = self._repo(tmp)
+            self._witness(repo, head)
+            stale = time.time() - 4000
+            os.utime(repo / ".azdone" / "conditions-ok", (stale, stale))
+            self.assertIn("périmé", json.loads(self._merge(repo).stdout)["hookSpecificOutput"]["permissionDecisionReason"])
+            self._witness(repo, head, review="return-to-build")
+            self.assertFalse((repo / ".azdone" / "conditions-ok").exists())
+
+    def test_record_promotes_after_streak_and_demotes_on_failure_bounded_by_ceiling(self) -> None:
+        with self._tmp() as tmp:
+            repo, _ = self._repo(tmp, autonomy="assisted", ceiling="autonomous", promote_after=2)
+            trust = repo / ".azdone" / "trust.yaml"
+            self._tool(repo, "record", "--run-id", "R1", "--risk", "rapid", "--verdict", "verified")
+            self.assertIn("autonomy: assisted", trust.read_text(encoding="utf-8"))
+            out = self._tool(repo, "record", "--run-id", "R2", "--risk", "rapid", "--verdict", "verified").stdout
+            self.assertIn("assisted -> autonomous", out)
+            text = trust.read_text(encoding="utf-8")
+            self.assertIn("autonomy: autonomous  # niveau courant", text)
+            self.assertIn("ceiling: autonomous", text)
+            self._tool(repo, "record", "--run-id", "R3", "--risk", "rapid", "--verdict", "verified")
+            self._tool(repo, "record", "--run-id", "R4", "--risk", "rapid", "--verdict", "verified")
+            self.assertIn("autonomy: autonomous", trust.read_text(encoding="utf-8"), "le plafond ceiling doit bloquer la promotion")
+            out = self._tool(repo, "record", "--run-id", "R5", "--risk", "rapid", "--verdict", "failed").stdout
+            self.assertIn("autonomous -> assisted", out)
+            ledger = (repo / ".azdone" / "trust-ledger.md").read_text(encoding="utf-8")
+            self.assertIn("| date | run_id | risk | verdict |", ledger)
+            self.assertIn("promotion:assisted->autonomous", ledger)
+            self.assertIn("demotion:autonomous->assisted", ledger)
+            out = self._tool(repo, "record", "--run-id", "R6", "--risk", "rapid", "--verdict", "verified", "--rollback").stdout
+            self.assertIn("assisted -> guided", out)
+
+    def test_override_is_journaled_and_status_reports_state(self) -> None:
+        with self._tmp() as tmp:
+            repo, _ = self._repo(tmp)
+            self._tool(repo, "record", "--run-id", "R1", "--risk", "standard", "--verdict", "verified", "--override", "run until done")
+            ledger = (repo / ".azdone" / "trust-ledger.md").read_text(encoding="utf-8")
+            self.assertIn("| run until done |", ledger)
+            self.assertIn("override-session", ledger)
+            status = self._tool(repo, "status").stdout
+            for line in ("autonomy: autonomous", "ceiling: full", "enforcement: enforced", "série verified: 1", "témoin: absent"):
+                self.assertIn(line, status)
+
+    def test_record_command_is_allowed_by_the_hook_but_other_trust_writes_are_not(self) -> None:
+        with self._tmp() as tmp:
+            repo, _ = self._repo(tmp)
+            trust = repo / ".azdone" / "trust.yaml"
+            allowed = run_hook(claude_payload("python3 .claude/hooks/azdone/azd-trust-guard.py record --run-id x --risk rapid --verdict verified", cwd=str(repo)), trust_file=trust)
+            self.assertEqual("", allowed.stdout.strip())
+            denied = run_hook(claude_payload("sed -i 's/assisted/full/' .azdone/trust.yaml", cwd=str(repo)), trust_file=trust)
+            self.assertIn("toujours-pause", denied.stdout)
+
+    def test_native_write_tools_are_intercepted(self) -> None:
+        with self._tmp() as tmp:
+            repo, _ = self._repo(tmp)
+            trust = repo / ".azdone" / "trust.yaml"
+            trust.write_text(trust.read_text(encoding="utf-8") + "protected_paths:\n  - .github/workflows/\n", encoding="utf-8")
+
+            def edit(path: str) -> subprocess.CompletedProcess:
+                payload = {"hook_event_name": "PreToolUse", "tool_name": "Edit", "cwd": str(repo),
+                           "tool_input": {"file_path": path, "old_string": "a", "new_string": "b"}}
+                return run_hook(payload, trust_file=trust)
+
+            self.assertIn("toujours-pause", edit(str(repo / ".azdone" / "trust.yaml")).stdout)
+            self.assertIn("protégé", edit(".github/workflows/ci.yml").stdout)
+            self.assertIn("hors du dépôt", edit("/etc/hosts").stdout)
+            self.assertEqual("", edit("src/app.py").stdout.strip())
+            self.assertEqual("", edit(str(repo / "README.md")).stdout.strip())
+
+    def test_spawn_agent_governs_external_agent_clis(self) -> None:
+        with self._tmp() as tmp:
+            repo, _ = self._repo(tmp)
+            trust = repo / ".azdone" / "trust.yaml"
+            for command in ('codex exec -m gpt-5 -s read-only -a never "review"', 'claude -p --permission-mode plan "x"', 'claude -p --allowedTools Read Grep "x"'):
+                self.assertEqual("", run_hook(claude_payload(command, cwd=str(repo)), trust_file=trust).stdout.strip(), command)
+            for command in ('codex exec -m gpt-5 "fix it"', 'claude -p "x"', 'agent -p --model grok "x"', 'cat packet.yaml | agent -p --model auto'):
+                self.assertIn("spawn_agent", run_hook(claude_payload(command, cwd=str(repo)), trust_file=trust).stdout, command)
+            trust.write_text(trust.read_text(encoding="utf-8").replace("autonomy: autonomous", "autonomy: full"), encoding="utf-8")
+            self.assertEqual("", run_hook(claude_payload('agent -p --model grok "x"', cwd=str(repo)), trust_file=trust).stdout.strip())
+
+    def test_unbounded_sql_outbound_requests_and_outside_root_writes(self) -> None:
+        with self._tmp() as tmp:
+            repo, _ = self._repo(tmp)
+            trust = repo / ".azdone" / "trust.yaml"
+            self.assertIn("suppression", run_hook(claude_payload('psql -c "DELETE FROM users"', cwd=str(repo)), trust_file=trust).stdout)
+            self.assertIn("suppression", run_hook(claude_payload('mysql -e "UPDATE users SET plan=1"', cwd=str(repo)), trust_file=trust).stdout)
+            self.assertEqual("", run_hook(claude_payload('psql -c "DELETE FROM users WHERE id = 1"', cwd=str(repo)), trust_file=trust).stdout.strip())
+            self.assertIn("external_message", run_hook(claude_payload("curl -X POST https://api.example.com/x -d a=b", cwd=str(repo)), trust_file=trust).stdout)
+            self.assertIn("external_message", run_hook(claude_payload("curl --json '{}' https://api.example.com/x", cwd=str(repo)), trust_file=trust).stdout)
+            self.assertEqual("", run_hook(claude_payload("curl https://api.example.com/x", cwd=str(repo)), trust_file=trust).stdout.strip())
+            self.assertEqual("", run_hook(claude_payload("curl -X POST http://localhost:3000/x -d a=b", cwd=str(repo)), trust_file=trust).stdout.strip())
+            self.assertIn("hors du dépôt", run_hook(claude_payload("echo x >> ~/.zshrc", cwd=str(repo)), trust_file=trust).stdout)
+            self.assertIn("hors du dépôt", run_hook(claude_payload("cp x /etc/hosts", cwd=str(repo)), trust_file=trust).stdout)
+            self.assertEqual("", run_hook(claude_payload("echo x > notes.txt", cwd=str(repo)), trust_file=trust).stdout.strip())
+            self.assertEqual("", run_hook(claude_payload("echo x | tee /tmp/a", cwd=str(repo)), trust_file=trust).stdout.strip())
+
+
 class HookManifestTests(unittest.TestCase):
     def test_hooks_json_is_valid_and_points_to_guard_script(self) -> None:
         data = json.loads(read(HOOKS_JSON))
         text = read(HOOKS_JSON)
         self.assertIn("azd-trust-guard.sh", text)
         self.assertIn("PreToolUse", data["hooks"])
+        matchers = [entry["matcher"] for entry in data["hooks"]["PreToolUse"]]
+        self.assertIn("Bash", matchers)
+        self.assertTrue(any("Edit" in m and "Write" in m for m in matchers), matchers)
 
     def test_cursor_hooks_json_is_valid_and_points_to_guard_script(self) -> None:
         data = json.loads(read(CURSOR_HOOKS_JSON))
         text = read(CURSOR_HOOKS_JSON)
         self.assertIn("azd-trust-guard.sh", text)
         self.assertIn("beforeShellExecution", data["hooks"])
+
+    def test_guard_python_compiles_and_runs_standalone(self) -> None:
+        result = subprocess.run(["python3", "-m", "py_compile", str(HOOK_PY)], capture_output=True, text=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        result = subprocess.run(["python3", str(HOOK_PY)], input=json.dumps(claude_payload("ls", cwd="/nonexistent")), capture_output=True, text=True, env={**os.environ, "AZD_TRUST_FILE": "/nonexistent/trust.yaml"}, timeout=10)
+        self.assertEqual(0, result.returncode, result.stderr)
 
     def test_guard_script_has_valid_bash_syntax(self) -> None:
         result = subprocess.run(["bash", "-n", str(HOOK)], capture_output=True, text=True)

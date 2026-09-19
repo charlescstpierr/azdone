@@ -41,14 +41,19 @@ WITNESS_MAX_AGE_SECONDS = 1800
 
 LEVEL_DEFAULTS = {
     "guided": {"commit": "ask", "push": "ask", "open_pr": "ask", "merge": "ask", "deploy": "ask",
-               "install_global": "ask", "external_message": "ask"},
+               "install_global": "ask", "external_message": "ask", "spawn_agent": "ask"},
     "assisted": {"commit": "auto", "push": "ask", "open_pr": "ask", "merge": "ask", "deploy": "ask",
-                 "install_global": "ask", "external_message": "ask"},
+                 "install_global": "ask", "external_message": "ask", "spawn_agent": "ask"},
     "autonomous": {"commit": "auto", "push": "auto", "open_pr": "auto", "merge": "conditional",
-                   "deploy": "ask", "install_global": "ask", "external_message": "ask"},
+                   "deploy": "ask", "install_global": "ask", "external_message": "ask", "spawn_agent": "ask"},
     "full": {"commit": "auto", "push": "auto", "open_pr": "auto", "merge": "auto",
-             "deploy": "conditional", "install_global": "auto", "external_message": "auto"},
+             "deploy": "conditional", "install_global": "auto", "external_message": "auto", "spawn_agent": "auto"},
 }
+LEVEL_ORDER = ("guided", "assisted", "autonomous", "full")
+RISK_ORDER = {"rapid": 0, "standard": 1, "critical": 2}
+WITNESS_KEYS = ("commit", "ci", "review", "reviewer_id", "author_id", "risk", "files_changed", "lanes", "written_at")
+LEDGER_HEADER = "| date | run_id | risk | verdict | actions_auto | rollback | override | niveau_effectif | série | événement |"
+LEDGER_SEPARATOR = "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
 
 ALWAYS_PAUSE = {
     "force_push": "force-push (git push --force, -f, --force-with-lease ou refspec +)",
@@ -86,6 +91,10 @@ SECRET_ASSIGNMENT = re.compile(
     r"\b[A-Za-z0-9_]*(SECRET|TOKEN|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|ACCESS_KEY)[A-Za-z0-9_]*=\S+",
 )
 SQL_DESTRUCTIVE = re.compile(r"\b(drop\s+(table|database|schema)|truncate\s+table)\b", re.IGNORECASE)
+SQL_UNBOUNDED = re.compile(r"\b(delete\s+from\s+\S+|update\s+\S+\s+set\s+[^;]*?)(?![^;]*\bwhere\b)[^;]*(;|$)", re.IGNORECASE)
+HTTP_CLIENTS = ("curl", "wget", "http", "https", "xh", "httpie")
+LOCAL_HOSTS = re.compile(r"https?://(localhost|127\.0\.0\.1|\[?::1\]?|0\.0\.0\.0)(:\d+)?", re.IGNORECASE)
+WRITE_COMMANDS = {"cp", "mv", "tee", "install", "rsync", "ln", "truncate", "dd", "patch", "touch", "chmod", "chown"}
 PIPE_TO_SHELL = re.compile(r"\b(curl|wget)\b[^|;&]*\|\s*(sudo\s+)?(ba|z|da)?sh\b")
 DEPLOY_SCRIPT = re.compile(r"(^|/)(deploy|release|publish)[^/]*\.(sh|py|js|ts|rb)$", re.IGNORECASE)
 
@@ -169,7 +178,7 @@ def _scalar(value: str):
 
 # --------------------------------------------------------------------------- entrée
 
-def read_payload() -> tuple[str, str, str]:
+def read_payload() -> tuple[str, str, str, str]:
     raw = sys.stdin.read()
     try:
         data = json.loads(raw) if raw.strip() else {}
@@ -179,17 +188,22 @@ def read_payload() -> tuple[str, str, str]:
         "tool_input" in data or data.get("hook_event_name") == "PreToolUse"
     )
     fmt = "claude" if is_claude else "cursor"
+    file_path = ""
     if fmt == "claude":
-        command = str((data.get("tool_input") or {}).get("command") or "")
+        tool_input = data.get("tool_input") or {}
+        command = str(tool_input.get("command") or "")
+        if str(data.get("tool_name") or "") in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
+            file_path = str(tool_input.get("file_path") or tool_input.get("notebook_path") or "")
     else:
         command = str(data.get("command") or "")
+        file_path = str(data.get("file_path") or "")
     cwd = str(data.get("cwd") or "")
     if not cwd:
         roots = data.get("workspace_roots") or []
         cwd = str(roots[0]) if roots else ""
     if not cwd:
         cwd = os.environ.get("CLAUDE_PROJECT_DIR") or os.environ.get("CURSOR_PROJECT_DIR") or os.getcwd()
-    return fmt, command, cwd
+    return fmt, command, cwd, file_path
 
 
 def find_trust_file(cwd: str) -> str | None:
@@ -321,8 +335,16 @@ def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> V
         return Verdict("always_pause", "credentials", ALWAYS_PAUSE["credentials"])
     if CUSTOMER_MESSAGE_PATTERNS.search(segment):
         return Verdict("always_pause", "customer_message", ALWAYS_PAUSE["customer_message"])
-    if SQL_DESTRUCTIVE.search(segment):
+    if SQL_DESTRUCTIVE.search(segment) or SQL_UNBOUNDED.search(segment):
         return Verdict("always_pause", "delete_data", ALWAYS_PAUSE["delete_data"])
+    if is_trust_tool(head, args):
+        return Verdict("action", "record_run", "journal de confiance (azd-trust-guard.py record|witness)")
+    spawn = classify_spawn_agent(head, args)
+    if spawn:
+        return spawn
+    outside = outside_root_write(segment, words, cwd, trust_root)
+    if outside:
+        return outside
 
     protected_hit = protected_path_write(segment, words, cwd, protected, trust_root)
     if protected_hit:
@@ -361,6 +383,82 @@ def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> V
         return install
     if TEAM_MESSAGE_PATTERNS.search(segment) or head in ("slack",):
         return Verdict("action", "external_message", "message vers un canal d'équipe")
+    if head in HTTP_CLIENTS and is_non_get_request(head, args) and not LOCAL_HOSTS.search(segment):
+        return Verdict("action", "external_message", f"requête sortante non GET ({head})")
+    return None
+
+
+def is_trust_tool(head: str, args: list[str]) -> bool:
+    script = ""
+    if head in ("python3", "python") and args:
+        script = os.path.basename(args[0])
+        sub = args[1] if len(args) > 1 else ""
+    else:
+        script = head
+        sub = args[0] if args else ""
+    return script == "azd-trust-guard.py" and sub in ("record", "witness", "status")
+
+
+def classify_spawn_agent(head: str, args: list[str]) -> Verdict | None:
+    if head == "codex" and args[:1] == ["exec"]:
+        joined = " ".join(args)
+        if not re.search(r"(^|\s)(-s|--sandbox)(\s+|=)read-only\b", joined):
+            return Verdict("action", "spawn_agent", "codex exec sans -s read-only")
+        return None
+    if head == "claude" and ("-p" in args or "--print" in args):
+        joined = " ".join(args)
+        read_only = re.search(r"--permission-mode(\s+|=)plan\b", joined) or re.search(r"--allowedTools|--allowed-tools", joined)
+        if not read_only:
+            return Verdict("action", "spawn_agent", "claude -p sans mode lecture seule")
+        return None
+    if head in ("agent", "cursor-agent") and ("-p" in args or "--print" in args):
+        return Verdict("action", "spawn_agent", "CLI Cursor sans mode lecture seule")
+    return None
+
+
+def is_non_get_request(head: str, args: list[str]) -> bool:
+    joined = " ".join(args)
+    if head in ("http", "https", "xh", "httpie"):
+        return any(a.upper() in ("POST", "PUT", "PATCH", "DELETE") for a in args[:2]) or "=" in joined
+    if re.search(r"(^|\s)(-X|--request)\s*(POST|PUT|PATCH|DELETE)\b", joined, re.IGNORECASE):
+        return True
+    return re.search(r"(^|\s)(-d|--data(-\w+)?|-F|--form|--json|--upload-file|-T)(\s|=|$)", joined) is not None
+
+
+def outside_root_write(segment: str, words: list[str], cwd: str, trust_root: str) -> Verdict | None:
+    """Écriture vers un chemin absolu ou ~ hors du dépôt et hors /tmp."""
+    head = os.path.basename(words[0]) if words else ""
+    is_write = head in WRITE_COMMANDS or (head in ("sed", "perl") and any(a.startswith("-i") for a in words[1:]))
+    redirect_targets = re.findall(r"(?:^|[^<>|&])>{1,2}\s*([^\s;&|]+)", segment)
+    targets = list(redirect_targets)
+    if is_write and len(words) > 1:
+        targets.append(words[-1])
+    for target in targets:
+        cleaned = target.strip("'\"")
+        if cleaned.startswith("~") or cleaned.startswith("$HOME"):
+            return Verdict("protected", "outside_root", f"écriture hors du dépôt ({cleaned})")
+        if cleaned.startswith("/") and not cleaned.startswith(("/tmp/", "/private/tmp/", "/dev/null", "/dev/std")):
+            root = (trust_root or "").rstrip("/") + "/"
+            if not cleaned.startswith(root):
+                return Verdict("protected", "outside_root", f"écriture hors du dépôt ({cleaned})")
+    return None
+
+
+def classify_file_write(file_path: str, cwd: str, protected: list[str], trust_root: str) -> Verdict | None:
+    """Outils natifs Write/Edit : mêmes règles que le shell pour les chemins."""
+    if not file_path:
+        return None
+    absolute = file_path if os.path.isabs(file_path) else os.path.join(cwd or trust_root, file_path)
+    absolute = os.path.normpath(absolute)
+    root = (trust_root or "").rstrip("/")
+    relative = os.path.relpath(absolute, root) if root and absolute.startswith(root + "/") else absolute
+    if relative == ".azdone/trust.yaml":
+        return Verdict("always_pause", "trust_file", ALWAYS_PAUSE["trust_file"])
+    if os.path.isabs(relative) and not relative.startswith(("/tmp/", "/private/tmp/")):
+        return Verdict("protected", "outside_root", f"écriture hors du dépôt ({relative})")
+    for entry in protected:
+        if _path_matches(relative, entry):
+            return Verdict("protected", "protected_path", f"écriture dans un chemin protégé ({relative})")
     return None
 
 
@@ -615,7 +713,7 @@ def current_branch(cwd: str) -> str:
 
 # --------------------------------------------------------------------------- décision
 
-def decide(verdict: Verdict, policy: dict, trust_file: str) -> str | None:
+def decide(verdict: Verdict, policy: dict, trust_file: str, cwd: str = "") -> str | None:
     """Retourne None pour autoriser, sinon la raison du refus."""
     hint = " Voir /azd-setup ou éditer .azdone/trust.yaml."
     if verdict.kind == "always_pause":
@@ -623,6 +721,8 @@ def decide(verdict: Verdict, policy: dict, trust_file: str) -> str | None:
                 f"ou autonomy: full. Un humain exécute cette commande lui-même s'il la veut.")
     if verdict.kind == "protected":
         return f"{verdict.reason} : ces chemins passent en ask quel que soit le niveau.{hint}"
+    if verdict.action == "record_run":
+        return None
     level = str(policy.get("autonomy", "assisted")).strip()
     defaults = LEVEL_DEFAULTS.get(level, LEVEL_DEFAULTS["assisted"])
     actions = policy.get("actions") if isinstance(policy.get("actions"), dict) else {}
@@ -630,16 +730,78 @@ def decide(verdict: Verdict, policy: dict, trust_file: str) -> str | None:
     if value == "auto":
         return None
     if value == "conditional":
-        witness = os.path.join(os.path.dirname(trust_file), "conditions-ok")
-        try:
-            fresh = os.path.isfile(witness) and (time.time() - os.path.getmtime(witness)) < WITNESS_MAX_AGE_SECONDS
-        except OSError:
-            fresh = False
-        if fresh:
+        problem = check_witness(policy, trust_file, cwd)
+        if problem is None:
             return None
-        return (f"Action '{verdict.action}' est 'conditional' ({verdict.reason}) mais aucun témoin frais "
-                f".azdone/conditions-ok (moins de 30 minutes) ne prouve CI verte et review acceptée.{hint}")
+        return (f"Action '{verdict.action}' est 'conditional' ({verdict.reason}) mais le témoin "
+                f".azdone/conditions-ok ne satisfait pas la politique : {problem}.{hint}")
     return f"Action '{verdict.action}' est '{value}' dans la politique de confiance ({verdict.reason}).{hint}"
+
+
+def read_witness(trust_file: str) -> dict | None:
+    witness = os.path.join(os.path.dirname(trust_file), "conditions-ok")
+    try:
+        if not os.path.isfile(witness):
+            return None
+        age = time.time() - os.path.getmtime(witness)
+        with open(witness, encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return None
+    data: dict = {"_age": age}
+    for line in lines:
+        key, sep, val = line.partition(":")
+        if sep:
+            data[key.strip()] = val.strip()
+    return data
+
+
+def check_witness(policy: dict, trust_file: str, cwd: str) -> str | None:
+    """None si le témoin satisfait `conditions:`, sinon la première condition violée."""
+    witness = read_witness(trust_file)
+    if witness is None:
+        return "aucun témoin (la review indépendante l'écrit sur accept)"
+    if witness["_age"] >= WITNESS_MAX_AGE_SECONDS:
+        return "témoin périmé (plus de 30 minutes)"
+    conditions = policy.get("conditions") if isinstance(policy.get("conditions"), dict) else {}
+    head = current_commit(cwd)
+    if head and witness.get("commit") and not head.startswith(witness["commit"]) and not witness["commit"].startswith(head):
+        return f"témoin écrit pour le commit {witness['commit'][:12]}, HEAD est {head[:12]}"
+    if _truthy(conditions.get("require_green_ci", True)) and witness.get("ci") != "green":
+        return f"ci: {witness.get('ci', 'absent')} (require_green_ci)"
+    if _truthy(conditions.get("require_independent_review", True)):
+        if witness.get("review") != "accept":
+            return f"review: {witness.get('review', 'absent')} (require_independent_review)"
+        if not witness.get("reviewer_id") or witness.get("reviewer_id") == witness.get("author_id"):
+            return "reviewer_id absent ou égal à author_id (require_independent_review)"
+    ceiling = str(conditions.get("risk_ceiling", "standard")).strip().lower()
+    risk = str(witness.get("risk", "critical")).strip().lower()
+    if RISK_ORDER.get(risk, 2) > RISK_ORDER.get(ceiling, 1):
+        return f"risk: {risk} dépasse risk_ceiling: {ceiling}"
+    for key, limit_key in (("files_changed", "max_files_changed"), ("lanes", "max_lanes")):
+        limit = conditions.get(limit_key)
+        if isinstance(limit, int) and limit > 0:
+            try:
+                actual = int(witness.get(key, "0"))
+            except ValueError:
+                return f"{key} illisible dans le témoin"
+            if actual > limit:
+                return f"{key}: {actual} dépasse {limit_key}: {limit}"
+    return None
+
+
+def _truthy(value) -> bool:
+    return value is True or str(value).strip().lower() in ("true", "yes", "1")
+
+
+def current_commit(cwd: str) -> str:
+    if not cwd or not os.path.isdir(cwd):
+        return ""
+    try:
+        result = subprocess.run(["git", "-C", cwd, "rev-parse", "HEAD"], capture_output=True, text=True, timeout=3, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
 
 
 def emit_deny(fmt: str, reason: str) -> None:
@@ -653,7 +815,9 @@ def emit_deny(fmt: str, reason: str) -> None:
 
 
 def main() -> int:
-    fmt, command, cwd = read_payload()
+    if len(sys.argv) > 1 and sys.argv[1] in ("record", "witness", "status"):
+        return run_subcommand(sys.argv[1:])
+    fmt, command, cwd, file_path = read_payload()
     trust_file = find_trust_file(cwd)
     if not trust_file:
         return 0
@@ -665,24 +829,205 @@ def main() -> int:
         return 0
     if str(policy.get("enforcement", "declared")).strip().lower() != "enforced":
         return 0
+    protected = [str(p) for p in policy.get("protected_paths")] if isinstance(policy.get("protected_paths"), list) else []
+    trust_root = os.path.dirname(os.path.dirname(os.path.abspath(trust_file)))
+    if file_path:
+        verdict = classify_file_write(file_path, cwd, protected, trust_root)
+        reason = decide(verdict, policy, trust_file, cwd) if verdict else None
+        if reason:
+            emit_deny(fmt, reason)
+        return 0
     if not command.strip():
         return 0
-    protected = policy.get("protected_paths") if isinstance(policy.get("protected_paths"), list) else []
-    trust_root = os.path.dirname(os.path.dirname(os.path.abspath(trust_file)))
     if PIPE_TO_SHELL.search(command):
-        reason = decide(Verdict("action", "install_global", "script distant exécuté dans un shell"), policy, trust_file)
+        reason = decide(Verdict("action", "install_global", "script distant exécuté dans un shell"), policy, trust_file, cwd)
         if reason:
             emit_deny(fmt, reason)
             return 0
     for segment in split_segments(command):
-        verdict = classify(segment, cwd, [str(p) for p in protected], trust_root)
+        verdict = classify(segment, cwd, protected, trust_root)
         if verdict is None:
             continue
-        reason = decide(verdict, policy, trust_file)
+        reason = decide(verdict, policy, trust_file, cwd)
         if reason:
             emit_deny(fmt, reason)
             return 0
     return 0
+
+
+# --------------------------------------------------------------------------- sous-commandes
+
+def run_subcommand(argv: list[str]) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="azd-trust-guard.py", description="Journal de confiance AZDone.")
+    sub = parser.add_subparsers(dest="command", required=True)
+    witness = sub.add_parser("witness", help="écrire .azdone/conditions-ok après une review acceptée")
+    witness.add_argument("--commit", required=True)
+    witness.add_argument("--ci", required=True, choices=("green", "red", "unknown"))
+    witness.add_argument("--review", required=True, choices=("accept", "return-to-build"))
+    witness.add_argument("--reviewer-id", required=True)
+    witness.add_argument("--author-id", required=True)
+    witness.add_argument("--risk", required=True, choices=("rapid", "standard", "critical"))
+    witness.add_argument("--files-changed", type=int, required=True)
+    witness.add_argument("--lanes", type=int, default=0)
+    witness.add_argument("--repo", default="")
+    record = sub.add_parser("record", help="journaliser un run et appliquer la confiance gagnée")
+    record.add_argument("--run-id", required=True)
+    record.add_argument("--risk", required=True, choices=("rapid", "standard", "critical"))
+    record.add_argument("--verdict", required=True, choices=("verified", "partial", "blocked", "failed"))
+    record.add_argument("--rollback", action="store_true")
+    record.add_argument("--override", default="")
+    record.add_argument("--actions", default="")
+    record.add_argument("--repo", default="")
+    status = sub.add_parser("status", help="afficher le niveau, la série et le témoin")
+    status.add_argument("--repo", default="")
+    args = parser.parse_args(argv)
+
+    repo = os.path.abspath(args.repo or os.getcwd())
+    trust_file = find_trust_file(repo)
+    if not trust_file:
+        print("aucun .azdone/trust.yaml trouvé ; lancez /azd-setup", file=sys.stderr)
+        return 2
+    azdone_dir = os.path.dirname(trust_file)
+    with open(trust_file, encoding="utf-8") as handle:
+        policy = parse_trust_yaml(handle.read())
+
+    if args.command == "witness":
+        path = os.path.join(azdone_dir, "conditions-ok")
+        if args.review != "accept":
+            if os.path.exists(path):
+                os.remove(path)
+            print(f"témoin supprimé (review: {args.review})")
+            return 0
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        values = {"commit": args.commit, "ci": args.ci, "review": args.review, "reviewer_id": args.reviewer_id,
+                  "author_id": args.author_id, "risk": args.risk, "files_changed": str(args.files_changed),
+                  "lanes": str(args.lanes), "written_at": stamp}
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("".join(f"{key}: {values[key]}\n" for key in WITNESS_KEYS))
+        problem = check_witness(policy, trust_file, repo)
+        print(f"témoin écrit : {path}")
+        print("conditions : satisfaites" if problem is None else f"conditions : non satisfaites ({problem})")
+        return 0
+
+    if args.command == "status":
+        level = str(policy.get("autonomy", "assisted"))
+        streak = ledger_streak(policy, azdone_dir)
+        witness_data = read_witness(trust_file)
+        problem = check_witness(policy, trust_file, repo)
+        print(f"autonomy: {level}")
+        print(f"ceiling: {policy.get('ceiling', 'full')}")
+        print(f"enforcement: {policy.get('enforcement', 'declared')}")
+        print(f"série verified: {streak}")
+        print("témoin: " + ("absent" if witness_data is None else ("valide" if problem is None else f"invalide ({problem})")))
+        return 0
+
+    return record_run(args, policy, trust_file, azdone_dir)
+
+
+def ledger_path(policy: dict, azdone_dir: str) -> str:
+    earn = policy.get("earn") if isinstance(policy.get("earn"), dict) else {}
+    configured = str(earn.get("ledger", ".azdone/trust-ledger.md"))
+    root = os.path.dirname(azdone_dir)
+    return configured if os.path.isabs(configured) else os.path.join(root, configured)
+
+
+def ledger_rows(path: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line.startswith("|") or line.startswith("| ---") or line.startswith("| date"):
+                    continue
+                rows.append([cell.strip() for cell in line.strip("|").split("|")])
+    except OSError:
+        return []
+    return rows
+
+
+def ledger_streak(policy: dict, azdone_dir: str) -> int:
+    streak = 0
+    for row in reversed(ledger_rows(ledger_path(policy, azdone_dir))):
+        if len(row) < 10:
+            continue
+        event = row[9]
+        if event.startswith(("promotion:", "demotion:")):
+            break
+        if event != "run":
+            continue
+        if row[3] == "verified" and row[5] in ("non", "no", "false", ""):
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def record_run(args, policy: dict, trust_file: str, azdone_dir: str) -> int:
+    path = ledger_path(policy, azdone_dir)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    existing = open(path, encoding="utf-8").read() if os.path.isfile(path) else ""
+    if "| date |" not in existing:
+        with open(path, "a", encoding="utf-8") as handle:
+            if not existing.strip():
+                handle.write("# Trust ledger AZDone\n\n")
+            handle.write(LEDGER_HEADER + "\n" + LEDGER_SEPARATOR + "\n")
+    level = str(policy.get("autonomy", "assisted")).strip()
+    date = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    rollback = "oui" if args.rollback else "non"
+    override = args.override.replace("|", "/") or "-"
+    actions = args.actions.replace("|", "/") or "-"
+    earn = policy.get("earn") if isinstance(policy.get("earn"), dict) else {}
+    enabled = _truthy(earn.get("enabled", True))
+    promote_after = int(earn.get("promote_after", 5) or 5)
+    demote_on = earn.get("demote_on") if isinstance(earn.get("demote_on"), list) else ["failed", "rollback"]
+
+    previous_streak = ledger_streak(policy, azdone_dir)
+    if args.verdict == "verified" and not args.rollback:
+        streak = previous_streak + 1
+    else:
+        streak = 0
+    rows = [f"| {date} | {args.run_id} | {args.risk} | {args.verdict} | {actions} | {rollback} | {override} | {level} | {streak} | run |"]
+    if args.override:
+        rows.append(f"| {date} | {args.run_id} | {args.risk} | {args.verdict} | {actions} | {rollback} | {override} | {level} | {streak} | override-session |")
+
+    new_level = level
+    ceiling = str(policy.get("ceiling", "full")).strip()
+    if enabled and level in LEVEL_ORDER:
+        index = LEVEL_ORDER.index(level)
+        ceiling_index = LEVEL_ORDER.index(ceiling) if ceiling in LEVEL_ORDER else len(LEVEL_ORDER) - 1
+        should_demote = (args.verdict in demote_on) or (args.rollback and "rollback" in demote_on)
+        if should_demote and index > 0:
+            new_level = LEVEL_ORDER[index - 1]
+            rows.append(f"| {date} | {args.run_id} | {args.risk} | {args.verdict} | - | {rollback} | - | {new_level} | 0 | demotion:{level}->{new_level} |")
+        elif streak >= promote_after and index < ceiling_index:
+            new_level = LEVEL_ORDER[index + 1]
+            rows.append(f"| {date} | {args.run_id} | {args.risk} | {args.verdict} | - | {rollback} | - | {new_level} | 0 | promotion:{level}->{new_level} |")
+    rows = [row for row in rows if row]
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write("\n".join(rows) + "\n")
+    if new_level != level:
+        rewrite_autonomy_line(trust_file, new_level)
+    print(f"ledger: {path}")
+    print(f"série verified: {streak}")
+    print(f"autonomy: {level} -> {new_level}" if new_level != level else f"autonomy: {level}")
+    return 0
+
+
+def rewrite_autonomy_line(trust_file: str, new_level: str) -> None:
+    """Ne réécrit que la ligne `autonomy:`, jamais le reste du fichier."""
+    with open(trust_file, encoding="utf-8") as handle:
+        lines = handle.read().splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if re.match(r"^autonomy:\s*", line):
+            comment = ""
+            if "#" in line:
+                comment = "  #" + line.split("#", 1)[1].rstrip("\n")
+            lines[index] = f"autonomy: {new_level}{comment}\n"
+            break
+    with open(trust_file, "w", encoding="utf-8") as handle:
+        handle.writelines(lines)
 
 
 if __name__ == "__main__":
