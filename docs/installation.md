@@ -106,6 +106,18 @@ Puis :
 3. vérifiez la présence d’un statut explicite;
 4. invoquez à nouveau l’init et exigez `already-initialized`.
 
+## Si `/azd` n’apparaît pas
+
+1. Redémarrez l’hôte (Claude Code, Cursor ou Codex) : la découverte des
+   skills de projet se fait souvent au démarrage, une copie faite en cours
+   de session peut ne pas être vue avant un redémarrage.
+2. Vérifiez un conflit de nom : un skill ou une commande `azd` déjà présent
+   ailleurs dans le projet (un autre plugin, un skill local) peut masquer
+   celui d’AZDone. Listez `/skills` (ou l’équivalent de votre hôte) et
+   cherchez un doublon avant de soupçonner l’installation.
+3. Revérifiez le compte de dossiers ci-dessus : un total différent de 18
+   signale une copie partielle plutôt qu’un problème de découverte.
+
 ## Mettre à jour
 
 Mettez d’abord à jour le clone AZDone, puis comparez avant de copier :
@@ -152,4 +164,8 @@ migrer ou les supprimer.
 - `scripts/install.sh` copie `hooks/azd-trust-guard.sh` dans le projet cible
   et affiche le bloc `.claude/settings.json` ou `.cursor/hooks.json` à ajouter
   à la main ; il ne l’enregistre jamais lui-même.
+- L’installation en plugin embarque tout le dépôt, y compris `tests/` et
+  `docs/` (environ 1,3 Mo au total) : aucun mécanisme d’exclusion de fichiers
+  n’est documenté pour les manifestes de plugin Claude Code ou Cursor. C’est
+  jugé acceptable pour un aperçu public, pas optimisé pour la taille.
 

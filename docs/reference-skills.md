@@ -46,7 +46,7 @@ skill-mutation : preuves répétées → 14
 Ces routes sont indicatives. Une gate invalide renvoie à la première cause
 touchée plutôt qu’automatiquement au code.
 
-## Les 8 playbooks de `azd`
+## Les 9 playbooks de `azd`
 
 | Playbook | Pour |
 | --- | --- |
@@ -54,6 +54,7 @@ touchée plutôt qu’automatiquement au code.
 | `correction-bug` | reproduire un défaut avant de le corriger |
 | `investigation` | une question en lecture seule, aucune écriture |
 | `surface-humaine` | un changement qu’un utilisateur va voir ou toucher |
+| `prototype` | code jetable en scope isolé pour trancher une question par la mesure |
 | `release` | pousser, ouvrir une PR, fusionner, déployer sous garde-fous |
 | `run-autonome` | un travail long avec un prédicat de sortie déclaré |
 | `reprise-de-session` | reprendre un travail interrompu depuis la dernière preuve |

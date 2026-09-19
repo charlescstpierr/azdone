@@ -38,7 +38,7 @@ que vous savez déjà :
 playbook correction de bug la respecte. Une étape sautée reste visible dans
 la liste avec `skip: <raison>`.
 
-## Les huit playbooks
+## Les neuf playbooks
 
 | Playbook | Pour |
 | --- | --- |
@@ -46,10 +46,15 @@ la liste avec `skip: <raison>`.
 | `correction-bug` | reproduire un défaut avant de le corriger |
 | `investigation` | une question en lecture seule, aucune écriture |
 | `surface-humaine` | un changement qu'un utilisateur va voir ou toucher |
+| `prototype` | code jetable en scope isolé pour trancher une question par la mesure |
 | `release` | pousser, ouvrir une PR, fusionner, déployer sous garde-fous |
 | `run-autonome` | un travail long avec un prédicat de sortie déclaré |
 | `reprise-de-session` | reprendre un travail interrompu depuis la dernière preuve |
 | `babysit-pr` | mener une PR jusqu'à mergeable : conflits, threads, CI |
+
+`prototype` ne produit rien de livrable : il retourne un verdict
+d'investigation et le résultat de la mesure, jamais un `verified` de
+livraison.
 
 ## Sticky et opt-out
 

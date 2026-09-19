@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run the public test suite
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Check shell script syntax
+        run: bash -n scripts/install.sh hooks/azd-trust-guard.sh
+
+      - name: Check hook Python syntax
+        run: python3 -m py_compile hooks/azd-trust-guard.py
+
+      - name: Validate plugin manifests as JSON
+        run: |
+          python3 -c "import json; json.load(open('.claude-plugin/plugin.json', encoding='utf-8'))"
+          python3 -c "import json; json.load(open('.claude-plugin/marketplace.json', encoding='utf-8'))"
+          python3 -c "import json; json.load(open('.cursor-plugin/plugin.json', encoding='utf-8'))"

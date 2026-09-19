@@ -36,8 +36,21 @@ cd your-project
 ```
 
 Replace `claude` with `cursor` or `codex` for your host. Under Codex the
-commands are `$azd-setup` and `$azd`. See the [installation
+commands are `$azd-setup` and `$azd`. Installed as a Claude Code or Cursor
+plugin from the repository's marketplace, the commands are namespaced:
+`/azdone:azd-setup`, `/azdone:azd`. See the [installation
 guide](docs/installation.md) for all three hosts and the plugin.
+
+### If you only remember one thing
+
+Give the agent a goal and a way to check it, in your own words:
+
+```text
+/azd the export writes duplicate rows when a retry lands mid-run. Reproduce first, then fix and prove it.
+```
+
+You do not need to name a playbook or list skills. "Reproduce first" and a
+checkable result are enough of a routing signal.
 
 ## What happens
 
@@ -65,12 +78,25 @@ who writes or approves it grants that authority; no skill text can.
 | merge | ask | ask | conditional | auto |
 | deploy | ask | ask | ask | conditional |
 | install_global, external_message | ask | ask | ask | auto |
-| credentials, delete_data, rewrite_shared_history, always_pause | ask | ask | ask | ask |
+| spawn_agent | ask | ask | ask | auto |
+| credentials, delete_data, rewrite_shared_history | never | never | never | never |
 
-An always-pause list stays non-bypassable at every level: force-push to a
-shared branch, deleting unmerged data, a production mutation without a proven
-rollback, messaging a third party, using credentials, or the agent widening
-`trust.yaml` itself.
+`never` means refused: a human runs it themselves. No level and no session
+phrase ever turns these into `auto`. The file's always-pause list is likewise
+non-bypassable: force-push to a shared branch, deleting unmerged data, a
+production mutation without a proven rollback, messaging a third party, using
+credentials, or the agent widening `trust.yaml` itself; a removed entry is
+reapplied by the skill and by the hook.
+
+A `conditional` merge checks the witness file `.azdone/conditions-ok`,
+written by the final review, against the file's `conditions:` (green CI,
+independent review, risk, files, lanes). Automatic promotion of `autonomy:`
+goes only through `python3 hooks/azd-trust-guard.py record`, the one write to
+`trust.yaml` the agent is allowed to make itself. Session phrases ("be
+autonomous", etc.) count only from a direct human message in the current
+turn, and only widen `commit`, `push`, `open_pr`, and `merge`. Under Cursor,
+the hook does not intercept native file edits: only shell commands go
+through it.
 
 Earned trust is on by default: five consecutive `verified` runs without a
 rollback raise the level one step, up to the configured `ceiling`, logged in
@@ -105,6 +131,7 @@ Every skill stays invocable on its own, without going through `/azd`. See the
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 - [Support](SUPPORT.md)
+- [Changelog](CHANGELOG.md)
 
 ## Verify the package
 

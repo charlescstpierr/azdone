@@ -151,6 +151,40 @@ class InstallScriptTests(unittest.TestCase):
 
             self.assertEqual(listing_after_first, listing_after_second)
 
+    def test_install_is_idempotent_and_non_destructive_for_cursor(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp)
+            self._seed_target(target)
+
+            first = self._run_install("cursor", target)
+            self.assertEqual(0, first.returncode, first.stderr)
+            listing_after_first = self._tree_listing(target)
+
+            second = self._run_install("cursor", target)
+            self.assertEqual(0, second.returncode, second.stderr)
+            listing_after_second = self._tree_listing(target)
+
+            self.assertEqual(
+                WITNESS_TEXT, (target / "README.md").read_text(encoding="utf-8")
+            )
+            self.assertTrue((target / ".claude/skills/autre-skill/SKILL.md").is_file())
+
+            skill_dirs = [p for p in (target / ".cursor/skills").iterdir() if p.is_dir()]
+            self.assertEqual(18, len(skill_dirs))
+
+            agent_files = list((target / ".cursor/agents").glob("*.md"))
+            self.assertEqual(5, len(agent_files))
+
+            hook_path = target / ".cursor/hooks/azdone/azd-trust-guard.sh"
+            self.assertTrue(hook_path.is_file())
+            mode = hook_path.stat().st_mode
+            self.assertTrue(mode & stat.S_IXUSR, "the copied cursor hook must be executable")
+
+            self.assertIn("hooks.json", first.stdout)
+            self.assertIn("beforeShellExecution", first.stdout)
+
+            self.assertEqual(listing_after_first, listing_after_second)
+
     def test_install_is_idempotent_and_non_destructive_for_codex(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp)
@@ -216,6 +250,43 @@ class ReadmeMentionsEntryLayerTests(unittest.TestCase):
             self.assertIn("/azd", text, f"{name} must mention /azd")
             self.assertIn("/azd-setup", text, f"{name} must mention /azd-setup")
             self.assertIn("trust.yaml", text, f"{name} must mention trust.yaml")
+
+    def test_readmes_mention_namespaced_plugin_command_and_spawn_agent(self) -> None:
+        for name in ("README.md", "README.en.md"):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            self.assertIn("/azdone:azd", text, f"{name} must mention /azdone:azd")
+            self.assertIn("spawn_agent", text, f"{name} must mention spawn_agent")
+
+    def test_readmes_have_the_one_thing_section(self) -> None:
+        fr = (ROOT / "README.md").read_text(encoding="utf-8")
+        en = (ROOT / "README.en.md").read_text(encoding="utf-8")
+        self.assertIn("Si vous ne retenez qu'une chose", fr)
+        self.assertIn("If you only remember one thing", en)
+
+
+class ContinuousIntegrationWorkflowTests(unittest.TestCase):
+    def test_workflow_file_exists(self) -> None:
+        self.assertTrue(
+            (ROOT / ".github/workflows/tests.yml").is_file(),
+            "missing .github/workflows/tests.yml",
+        )
+
+    def test_workflow_has_no_em_dash(self) -> None:
+        text = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
+        self.assertNotIn("—", text)
+
+    def test_workflow_runs_unittest_discover_and_py_compile(self) -> None:
+        text = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
+        self.assertIn("unittest discover", text)
+        self.assertIn("py_compile", text)
+        self.assertIn("push", text)
+        self.assertIn("pull_request", text)
+
+
+class ContributingMentionsReleaseTests(unittest.TestCase):
+    def test_contributing_documents_tagging_a_release(self) -> None:
+        text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        self.assertIn("tag", text)
 
 
 if __name__ == "__main__":

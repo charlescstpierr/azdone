@@ -40,6 +40,17 @@ avec `CHANGELOG.md`; `scripts/install.sh` est exécutable, ne supprime jamais
 rien, et passe `bash -n`; le guide `docs/guide/` est complet et ses liens
 relatifs résolvent; le README mentionne `/azd`, `/azd-setup` et `trust.yaml`.
 
+## Ce que la CI prouve
+
+`.github/workflows/tests.yml` s'exécute sur `push` et `pull_request`, sur
+Python 3.11 et 3.12. Elle prouve que la suite publique passe sur les deux
+versions ciblées, que `scripts/install.sh` et `hooks/azd-trust-guard.sh`
+passent `bash -n`, que `hooks/azd-trust-guard.py` compile
+(`py_compile`), et que les trois manifestes (`plugin.json` Claude Code,
+`marketplace.json`, `plugin.json` Cursor) sont du JSON valide. Elle ne
+prouve rien de plus : ni le comportement du hook sur un vrai hôte, ni
+l'installation par un humain.
+
 ## Ce que la validation structurelle prouve
 
 Chaque dossier a aussi été passé dans le validateur officiel utilisé par

@@ -16,7 +16,7 @@ AZDone : 16 SKILL.md + références, agents/*, hooks/* optionnels
   │ prescrit routes, cartes, gates, preuves, handoffs et limites
   ▼
 Dépôt utilisateur
-    .azdone/trust.yaml ─ trust-ledger.md ─ decisions.tsv
+    .azdone/trust.yaml ─ trust-ledger.md ─ decisions.tsv ─ conditions-ok (témoin, jetable)
     Boussole ─ Langage partagé ─ System Success Map
          └──── Project Decision Graph ────┐
                                           ▼
@@ -38,6 +38,10 @@ Les huit playbooks vivent dans `skills/azd/playbooks/`. Les agents
 Les hooks (`hooks/`) sont optionnels : sous Claude Code et Cursor, ils font
 respecter `trust.yaml` en `enforcement: enforced` ; ils ne sont jamais requis
 pour invoquer un skill, et leur suppression ne bloque rien.
+`.azdone/conditions-ok` est un témoin jetable écrit par la review finale et
+lu par le hook pour un `merge` `conditional` ; `.azdone/trust-ledger.md` est
+l'historique append-only des runs et des promotions/rétrogradations
+d'`autonomy:`, écrit uniquement par `azd-trust-guard.py record`.
 
 ## Trois frontières
 

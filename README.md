@@ -41,8 +41,22 @@ cd votre-projet
 ```
 
 Remplacez `claude` par `cursor` ou `codex` selon votre hôte. Sous Codex, les
-commandes s'écrivent `$azd-setup` et `$azd`. Le [guide
+commandes s'écrivent `$azd-setup` et `$azd`. Installé comme plugin Claude Code
+ou Cursor depuis la marketplace du dépôt, les commandes sont namespacées :
+`/azdone:azd-setup`, `/azdone:azd`. Le [guide
 d'installation](docs/installation.md) couvre les trois hôtes et le plugin.
+
+### Si vous ne retenez qu'une chose
+
+Donnez à l'agent un objectif et une façon de vérifier, dans vos mots :
+
+```text
+/azd l'export écrit des lignes en double quand un retry tombe en plein run. Reproduis d'abord, puis corrige et prouve.
+```
+
+Vous n'avez pas besoin de nommer un playbook ni de lister des skills.
+« Reproduis d'abord » et un résultat vérifiable suffisent comme signal de
+routage.
 
 ## Ce qui se passe
 
@@ -71,12 +85,25 @@ skill ne le peut.
 | merge | ask | ask | conditional | auto |
 | deploy | ask | ask | ask | conditional |
 | install_global, external_message | ask | ask | ask | auto |
-| credentials, delete_data, rewrite_shared_history, always_pause | ask | ask | ask | ask |
+| spawn_agent | ask | ask | ask | auto |
+| credentials, delete_data, rewrite_shared_history | never | never | never | never |
 
-Une liste toujours-pause reste non contournable à tout niveau : force-push
-partagé, suppression de données non fusionnées, mutation de production sans
-rollback prouvé, message à un tiers, usage de credentials, élargissement de
-`trust.yaml` par l'agent lui-même.
+`never` = refusé, un humain l'exécute lui-même : aucun niveau, aucune phrase
+de session ne rend ces actions `auto`. Une liste toujours-pause du fichier
+reste elle aussi non contournable : force-push partagé, suppression de
+données non fusionnées, mutation de production sans rollback prouvé, message
+à un tiers, usage de credentials, élargissement de `trust.yaml` par l'agent
+lui-même ; une entrée retirée est réappliquée par le skill et par le hook.
+
+`merge` en `conditional` vérifie le témoin `.azdone/conditions-ok`, écrit par
+la review finale, contre les `conditions:` du fichier (CI verte, review
+indépendante, risque, fichiers, lanes). La promotion automatique d'`autonomy:`
+passe uniquement par `python3 hooks/azd-trust-guard.py record`, seule écriture
+de `trust.yaml` permise à l'agent. Les phrases de session (« sois autonome »,
+etc.) ne comptent que dans un message humain direct du tour courant et
+n'élargissent que `commit`, `push`, `open_pr` et `merge`. Sous Cursor, le hook
+n'intercepte pas les éditions de fichiers natives : seules les commandes
+shell passent par lui.
 
 La confiance gagnée est active par défaut : cinq runs `verified` consécutifs
 sans rollback font monter d'un cran jusqu'au plafond `ceiling`, journalisé

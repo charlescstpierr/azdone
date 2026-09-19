@@ -42,6 +42,19 @@ La description doit contenir :
 Les contributions de sécurité ne doivent pas passer par une issue publique.
 Voir [SECURITY.md](SECURITY.md).
 
+## Publier une version
+
+Une version est publiée par un humain, jamais par un agent :
+
+1. mettez à jour le numéro de version dans les deux manifestes
+   (`.claude-plugin/plugin.json` et `.cursor-plugin/plugin.json`);
+2. ajoutez une section datée dans `CHANGELOG.md` avec les changements notables;
+3. vérifiez que la suite publique reste verte;
+4. posez le tag : `git tag vX.Y.Z-preview`;
+5. poussez le tag : `git push --tags`.
+
+Aucun agent AZDone ne pose de tag de version de lui-même.
+
 ## Licence des contributions
 
 Le projet n’a pas encore choisi sa licence stable. N’envoyez pas de contribution

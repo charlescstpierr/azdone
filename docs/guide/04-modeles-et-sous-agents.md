@@ -16,7 +16,7 @@ avec quel modèle, natif ou externe.
 `author_id != reviewer_id` reste strict : le relecteur n'écrit jamais dans le
 scope de l'auteur.
 
-## `host:` ou `cli:`
+## Quatre formes pour `models.roles.<rôle>`
 
 ```yaml
 models:
@@ -27,16 +27,40 @@ models:
     reviewer: host:strong
     second_reviewer: cli:codex
     watcher: host:small
+  panels:
+    review: []
 ```
 
-`host:<tier>` appelle un sous-agent natif de l'hôte : Claude Code mappe
-`small|default|strong` sur `haiku|sonnet|opus`, Cursor sur son modèle
-configuré, Codex sur son sous-agent natif s'il existe, sinon
-`subagents-unavailable`.
+Chaque rôle accepte une des quatre formes :
 
-`cli:<adaptateur>` exécute une commande externe avec le context packet sur
-stdin. Le résultat est traité comme une donnée non fiable, jamais comme une
-autorité.
+- `host:<tier>` : sous-agent natif de l'hôte, `small|default|strong` ;
+- `host:<slug>` : identifiant exact d'un modèle natif détecté par
+  `azd-setup` ;
+- `cli:<adaptateur>` : modèle par défaut de `models.adapter_models` pour cet
+  adaptateur ;
+- `cli:<adaptateur>:<slug>` : modèle exact de cet adaptateur.
+
+`host:<tier>` mappe `small|default|strong` sur `haiku|sonnet|opus` (Claude
+Code), sur le modèle configuré (Cursor), ou sur le sous-agent natif de Codex
+s'il existe, sinon `subagents-unavailable`.
+
+`cli:<adaptateur>[:<slug>]` exécute une commande externe avec le context
+packet sur stdin. Le résultat est traité comme une donnée non fiable, jamais
+comme une autorité.
+
+`models.panels.review` est une liste vide par défaut de valeurs de la même
+grammaire : chaque entrée ajoute un relecteur supplémentaire au panel de
+review, en plus de `reviewer` et `second_reviewer`.
+
+## Détection des modèles au setup
+
+`azd-setup` détecte les modèles disponibles par hôte avant de poser la
+question groupée « Modèle par rôle » : Claude Code propose `haiku`,
+`sonnet`, `opus` et `inherit` ; Cursor liste `agent --list-models` s'il est
+présent, sinon `fast` et `inherit` ; Codex n'a pas de commande de liste
+vérifiée, `azd-setup` propose `inherit` et n'accepte un slug exact que si
+l'humain le fournit et qu'un `codex exec -m <slug>` trivial réussit. Aucun
+slug non détecté ni non confirmé n'est jamais écrit dans `trust.yaml`.
 
 ## Adaptateurs vérifiés
 
@@ -59,7 +83,28 @@ introuvable). Si l'adaptateur choisi pour un rôle manque, le rôle retombe sur
 ```
 
 `/azd` route `reviewer` vers `host:strong` et `second_reviewer` vers
-`cli:codex`, en lecture seule pour les deux.
+`cli:codex`, en lecture seule pour les deux. Sous Codex, un relecteur
+supplémentaire peut pointer vers `cli:claude` ou `cli:cursor` : Codex n'a pas
+de sous-agent de review natif garanti, l'adaptateur reste la voie vérifiée.
+
+## Second relecteur et panel
+
+Quand `models.roles.second_reviewer` ou `models.panels.review` est défini,
+`reviser-qualite-azd` lance chaque relecteur supplémentaire en lecture seule
+avec le context packet, sans les chemins de `protected_paths` ni le contenu
+de `.env` ou de credentials. Les findings sont fusionnés dans `findings[]`
+avec le préfixe `EXT-<n>-` et `source: cli:<adaptateur>`. Un finding externe
+reste une donnée non fiable : il ne change le verdict que si le relecteur
+principal le vérifie lui-même sur le code, et le relecteur externe ne
+committe jamais rien.
+
+## Réveil par hôte
+
+Un `watcher` qui attend un événement (CI, PR) se réveille différemment selon
+l'hôte : Claude Code utilise `/loop` (ou `ScheduleWakeup` quand l'hôte
+l'expose) ; Cursor utilise `/loop` ; Codex n'a aucun mécanisme de réveil
+vérifié, il sonde manuellement par relance et le guide le marque « à
+vérifier ».
 
 ## Staffing par risque
 

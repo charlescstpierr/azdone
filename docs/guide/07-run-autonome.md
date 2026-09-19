@@ -15,10 +15,29 @@ de route pour se faciliter la tâche.
 
 ## Ce qui est journalisé
 
-Chaque décision matérielle est écrite dans `.azdone/decisions.tsv` : quoi,
-pourquoi, alternative rejetée, preuve. Chaque run se termine dans
-`.azdone/trust-ledger.md` avec son verdict, ses actions automatiques
-exécutées, et s'il y a eu rollback.
+Chaque décision matérielle est écrite dans `.azdone/decisions.tsv`, un
+fichier à tabulations avec l'en-tête exact :
+
+```text
+ts	run_id	iteration	decision	alternative_rejetee	preuve	predicat_avance
+```
+
+Si `.azdone/` n'existe pas encore (dépôt non initialisé), `/azd` le crée avec
+ce seul fichier et le dit dans sa réponse.
+
+En fin de run, `/azd` appelle `python3 hooks/azd-trust-guard.py record` avec
+le verdict, le risque et les actions automatiques exécutées : c'est la voie
+qui ajoute la ligne à `.azdone/trust-ledger.md` et applique la promotion ou
+la rétrogradation d'`autonomy:`. Un run long qui se termine `verified`
+propose `$conserver-apprentissages-azd` en dernière étape, jamais une
+écriture de skill sans votre accord explicite.
+
+## Compatibilité `/loop`
+
+Sous Claude Code et Cursor, un run autonome long peut s'appuyer sur `/loop`
+pour se relancer périodiquement plutôt que de rester dans un seul tour sans
+fin ; le prédicat de sortie et le journal `decisions.tsv` restent identiques
+d'une relance à l'autre.
 
 ## Phrases reconnues
 

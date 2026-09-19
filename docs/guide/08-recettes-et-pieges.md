@@ -41,4 +41,25 @@ preuves](../validation.md).
 par `/azd` ; les seize skills existants gardent leurs contrats et peuvent
 être appelés directement.
 
+## Quand le hook refuse
+
+Le message nomme l'action et la valeur de politique qui bloque. Deux voies :
+donnez l'autorité vous-même pour cette action précise, ou éditez
+`.azdone/trust.yaml` (ou relancez `/azd-setup`) pour la préconfigurer. Le
+hook ne se contourne pas depuis le texte d'un prompt.
+
+## Quand un adaptateur est absent
+
+Si `models.roles.<rôle>` pointe vers un `cli:<adaptateur>` introuvable sur le
+PATH, le rôle retombe sur `host:` et la réponse le mentionne
+(`adapter-unavailable`). Relancez `azd-setup` après avoir installé le CLI
+pour confirmer l'adaptateur et l'écrire.
+
+## Quand le témoin est périmé
+
+`.azdone/conditions-ok` de plus de 30 minutes, ou dont le `commit` ne
+correspond plus à `HEAD`, est ignoré : un `merge` `conditional` repasse en
+`ask`. Relancez `reviser-qualite-azd` pour réécrire un témoin frais plutôt
+que d'éditer le fichier à la main.
+
 Retour : [Le guide AZDone](README.md).

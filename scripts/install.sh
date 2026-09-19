@@ -12,7 +12,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: scripts/install.sh <claude|cursor|codex> [chemin-projet]" >&2
+  echo "Usage : scripts/install.sh <claude|cursor|codex> [chemin-projet]" >&2
   echo "  claude : copie vers .claude/skills et .claude/agents" >&2
   echo "  cursor : copie vers .cursor/skills et .cursor/agents" >&2
   echo "  codex  : copie vers .agents/skills (pas de sous-agents Codex)" >&2
@@ -43,14 +43,14 @@ case "$host" in
     agents_dir=""
     ;;
   *)
-    echo "Hote inconnu : ${host}" >&2
+    echo "Hôte inconnu : ${host}" >&2
     usage
     exit 1
     ;;
 esac
 
 if [ ! -d "$target" ]; then
-  echo "Chemin projet introuvable : ${target}" >&2
+  echo "Chemin de projet introuvable : ${target}" >&2
   exit 1
 fi
 
@@ -69,12 +69,12 @@ for skill_path in "${repo_root}/skills"/*; do
       copied_skills=$((copied_skills + 1))
       ;;
     *)
-      # Dossier hors convention AZDone : jamais copie.
+      # Dossier hors convention AZDone : jamais copié.
       ;;
   esac
 done
 
-echo "Skills AZDone copies : ${copied_skills} -> ${target}/${skills_dir}"
+echo "Skills AZDone copiés : ${copied_skills} -> ${target}/${skills_dir}"
 
 if [ -n "$agents_dir" ] && [ -d "${repo_root}/agents" ]; then
   mkdir -p "${target}/${agents_dir}"
@@ -84,9 +84,9 @@ if [ -n "$agents_dir" ] && [ -d "${repo_root}/agents" ]; then
     cp "$agent_file" "${target}/${agents_dir}/"
     agent_count=$((agent_count + 1))
   done
-  echo "Sous-agents AZDone copies : ${agent_count} -> ${target}/${agents_dir}"
+  echo "Sous-agents AZDone copiés : ${agent_count} -> ${target}/${agents_dir}"
 elif [ "$host" != "codex" ]; then
-  echo "Aucun dossier agents/ trouve dans le depot AZDone (rien copie)."
+  echo "Aucun dossier agents/ trouvé dans le dépôt AZDone (rien copié)."
 fi
 
 echo ""
@@ -104,7 +104,7 @@ if [ "$host" = "claude" ]; then
   echo "Cette voie namespace les commandes : /azdone:azd, /azdone:azd-setup."
 fi
 
-# Copie du hook de confiance (jamais requis, jamais enregistre automatiquement :
+# Copie du hook de confiance (jamais requis, jamais enregistré automatiquement :
 # modifier settings.json / hooks.json exige l'accord explicite de l'humain).
 if [ "$host" = "claude" ] || [ "$host" = "cursor" ]; then
   if [ "$host" = "claude" ]; then
@@ -122,24 +122,34 @@ if [ "$host" = "claude" ] || [ "$host" = "cursor" ]; then
       chmod +x "${hook_dir}/azd-trust-guard.py"
     fi
     echo ""
-    echo "Hook de confiance copie (non enregistre) -> ${hook_dir}/azd-trust-guard.sh"
+    echo "Hook de confiance copié (non enregistré) -> ${hook_dir}/azd-trust-guard.sh"
   fi
 
   if [ "$host" = "claude" ]; then
     echo ""
-    echo "Pour l'enregistrer, ajoutez ce bloc a ${target}/.claude/settings.json (fusionner, ne pas ecraser) :"
+    echo "Pour l'enregistrer, ajoutez ce bloc à ${target}/.claude/settings.json (fusionner, ne pas écraser) :"
     echo '  {"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/azdone/azd-trust-guard.sh\""}]}]}}'
-    echo "Ce script ne modifie jamais settings.json lui-meme."
+    echo "Ce script ne modifie jamais settings.json lui-même."
   else
     echo ""
-    echo "Pour l'enregistrer, ajoutez ce bloc a ${target}/.cursor/hooks.json (fusionner, ne pas ecraser) :"
+    echo "Pour l'enregistrer, ajoutez ce bloc à ${target}/.cursor/hooks.json (fusionner, ne pas écraser) :"
     echo '  {"version":1,"hooks":{"beforeShellExecution":[{"command":"bash \"./.cursor/hooks/azdone/azd-trust-guard.sh\""}]}}'
-    echo "Chemin relatif utilise volontairement : VERIFIED_FORMATS.md ne confirme pas la variable CURSOR_PROJECT_DIR pour un hooks.json de projet (hors plugin)."
-    echo "Ce script ne modifie jamais hooks.json lui-meme."
+    echo "Chemin relatif utilisé volontairement : VERIFIED_FORMATS.md ne confirme pas la variable CURSOR_PROJECT_DIR pour un hooks.json de projet (hors plugin)."
+    echo "Ce script ne modifie jamais hooks.json lui-même."
   fi
 fi
 
 if [ "$host" = "codex" ]; then
   echo ""
-  echo "Codex : aucun mode enforced. La confiance y reste 'declared' seulement, aucun hook ne s'y execute."
+  echo "Codex : aucun mode enforced. La confiance y reste 'declared' seulement, aucun hook ne s'y exécute."
+
+  if [ -f "${repo_root}/hooks/azd-trust-guard.py" ]; then
+    codex_hook_dir="${target}/.agents/azdone"
+    mkdir -p "${codex_hook_dir}"
+    cp "${repo_root}/hooks/azd-trust-guard.py" "${codex_hook_dir}/azd-trust-guard.py"
+    chmod +x "${codex_hook_dir}/azd-trust-guard.py"
+    echo ""
+    echo "azd-trust-guard.py copié (sans hook, Codex n'en exécute aucun) -> ${codex_hook_dir}/azd-trust-guard.py"
+    echo "Il reste utilisable directement en ligne de commande pour 'record' (promotion/rétrogradation d'autonomy:) et 'witness' (écriture du témoin .azdone/conditions-ok), sans dépendre d'un hook."
+  fi
 fi
