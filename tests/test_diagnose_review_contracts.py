@@ -1,18 +1,6 @@
-import re
 import unittest
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-
-
-def read_skill(name: str) -> str:
-    return (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
-
-
-def normalized(text: str) -> str:
-    return re.sub(r"\s+", " ", text.lower())
+from _skill_helpers import normalized, read_skill_bundle
 
 
 class DiagnoseReviewContractTests(unittest.TestCase):
@@ -22,7 +10,7 @@ class DiagnoseReviewContractTests(unittest.TestCase):
         self.assertEqual([], missing, f"missing tokens: {missing}")
 
     def test_diagnose_requires_reproducible_ledger_competing_hypotheses_and_no_fix_boundary(self) -> None:
-        text = read_skill("diagnostiquer-probleme-azd")
+        text = read_skill_bundle("diagnostiquer-probleme-azd")
 
         self.assertTokens(
             text,
@@ -43,13 +31,13 @@ class DiagnoseReviewContractTests(unittest.TestCase):
         self.assertRegex(text, r"open \| falsified \| supported \| blocked")
 
     def test_diagnose_separates_author_and_reviewer_evidence(self) -> None:
-        text = read_skill("diagnostiquer-probleme-azd")
+        text = read_skill_bundle("diagnostiquer-probleme-azd")
 
         self.assertTokens(text, ("author_id", "reviewer_id", "author_evidence", "reviewer_evidence"))
         self.assertIn("observation indépendante", text)
 
     def test_review_requires_planted_defects_stable_ids_and_ranked_findings(self) -> None:
-        text = read_skill("reviser-qualite-azd")
+        text = read_skill_bundle("reviser-qualite-azd")
 
         self.assertTokens(
             text,
@@ -72,7 +60,7 @@ class DiagnoseReviewContractTests(unittest.TestCase):
         self.assertIn("never renumber open findings", text)
 
     def test_review_keeps_author_and_reviewer_evidence_distinct(self) -> None:
-        text = read_skill("reviser-qualite-azd")
+        text = read_skill_bundle("reviser-qualite-azd")
 
         self.assertTokens(text, ("author_id != reviewer_id", "author_evidence", "reviewer_evidence"))
         self.assertIn("distinct from `author_evidence`", text)

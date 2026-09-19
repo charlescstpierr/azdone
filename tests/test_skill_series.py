@@ -1,24 +1,17 @@
 import re
 import unittest
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-
-
-def read_skill(name: str) -> str:
-    return (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+from _skill_helpers import assert_language_rule, read_skill, read_skill_bundle
 
 
 class SkillSeriesContractTests(unittest.TestCase):
     def test_entry_skill_routes_the_complete_verified_journey(self) -> None:
-        text = read_skill("piloter-workflow-azd")
+        skill_text = read_skill("piloter-workflow-azd")
+        bundle = read_skill_bundle("piloter-workflow-azd")
 
-        self.assertRegex(text, r"(?m)^name: piloter-workflow-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
+        self.assertRegex(skill_text, r"(?m)^name: piloter-workflow-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
 
         for skill in (
             "clarifier-objectif-azd",
@@ -35,7 +28,7 @@ class SkillSeriesContractTests(unittest.TestCase):
             "conserver-apprentissages-azd",
             "ameliorer-workflow-azd",
         ):
-            self.assertIn(f"${skill}", text)
+            self.assertIn(f"${skill}", bundle)
 
         for guarantee in (
             "same repository",
@@ -47,70 +40,70 @@ class SkillSeriesContractTests(unittest.TestCase):
             "resume",
             "authority",
         ):
-            self.assertIn(guarantee, text)
+            self.assertIn(guarantee, bundle)
 
-        self.assertRegex(text, re.compile(r"partial|blocked|failed", re.IGNORECASE))
-        self.assertIn("au plus une question matérielle", text)
-        self.assertIn("$inspecter-projet-azd` avant le diagnostic, le design, le plan ou le code", text)
+        self.assertRegex(bundle, re.compile(r"partial|blocked|failed", re.IGNORECASE))
+        self.assertIn("au plus une question matérielle", bundle)
+        self.assertIn("$inspecter-projet-azd` avant le diagnostic, le design, le plan ou le code", bundle)
 
     def test_build_skill_is_final_bilingual_and_tdd_first(self) -> None:
-        text = read_skill("construire-solution-azd")
+        skill_text = read_skill("construire-solution-azd")
+        bundle = read_skill_bundle("construire-solution-azd")
 
-        self.assertRegex(text, r"(?m)^name: construire-solution-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertIn("TDD", text)
-        self.assertIn("smallest valid change", text)
-        self.assertIn("Ponytail", text)
-        self.assertIn("evidence", text)
-        self.assertIn("safety", text)
-        self.assertIn("accessibility", text)
-        self.assertIn("tests", text)
+        self.assertRegex(skill_text, r"(?m)^name: construire-solution-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertIn("TDD", bundle)
+        self.assertIn("smallest valid change", bundle)
+        self.assertIn("Ponytail", bundle)
+        self.assertIn("evidence", bundle)
+        self.assertIn("safety", bundle)
+        self.assertIn("accessibility", bundle)
+        self.assertIn("tests", bundle)
 
     def test_verify_skill_is_evidence_first_and_honest(self) -> None:
-        text = read_skill("prouver-resultat-azd")
+        skill_text = read_skill("prouver-resultat-azd")
+        bundle = read_skill_bundle("prouver-resultat-azd")
 
-        self.assertRegex(text, r"(?m)^name: prouver-resultat-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertIn("claim-by-claim evidence matrix", text)
-        self.assertIn("fresh tests", text)
-        self.assertIn("lint", text)
-        self.assertIn("types", text)
-        self.assertIn("build", text)
-        self.assertIn("runtime", text)
-        self.assertIn("visual", text)
-        self.assertIn("partial", text)
-        self.assertIn("blocked", text)
-        self.assertIn("failed", text)
+        self.assertRegex(skill_text, r"(?m)^name: prouver-resultat-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertIn("claim-by-claim evidence matrix", bundle)
+        self.assertIn("fresh tests", bundle)
+        self.assertIn("lint", bundle)
+        self.assertIn("types", bundle)
+        self.assertIn("build", bundle)
+        self.assertIn("runtime", bundle)
+        self.assertIn("visual", bundle)
+        self.assertIn("partial", bundle)
+        self.assertIn("blocked", bundle)
+        self.assertIn("failed", bundle)
         for field in ("claim", "status", "evidence", "freshness", "oracle", "risk"):
-            self.assertIn(f"`{field}`", text)
+            self.assertIn(f"`{field}`", bundle)
 
     def test_review_skill_is_independent_and_ranked(self) -> None:
-        text = read_skill("reviser-qualite-azd")
+        skill_text = read_skill("reviser-qualite-azd")
+        bundle = read_skill_bundle("reviser-qualite-azd")
 
-        self.assertRegex(text, r"(?m)^name: reviser-qualite-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertIn("independent", text)
-        self.assertIn("correctness", text)
-        self.assertIn("security", text)
-        self.assertIn("design", text)
-        self.assertIn("simplicity", text)
-        self.assertIn("ranked", text)
-        self.assertIn("actionable", text)
-        self.assertIn("return to build", text)
+        self.assertRegex(skill_text, r"(?m)^name: reviser-qualite-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertIn("independent", bundle)
+        self.assertIn("correctness", bundle)
+        self.assertIn("security", bundle)
+        self.assertIn("design", bundle)
+        self.assertIn("simplicity", bundle)
+        self.assertIn("ranked", bundle)
+        self.assertIn("actionable", bundle)
+        self.assertIn("return to build", bundle)
 
     def test_ui_contract_tokens_survive_discovery_design_build_verify_and_review(self) -> None:
-        discovery = read_skill("inspecter-projet-azd")
-        design = read_skill("concevoir-experience-azd")
-        build = read_skill("construire-solution-azd")
-        verify = read_skill("prouver-resultat-azd")
-        review = read_skill("reviser-qualite-azd")
-        orchestrate = read_skill("piloter-workflow-azd")
+        discovery = read_skill_bundle("inspecter-projet-azd")
+        design = read_skill_bundle("concevoir-experience-azd")
+        build = read_skill_bundle("construire-solution-azd")
+        verify = read_skill_bundle("prouver-resultat-azd")
+        review = read_skill_bundle("reviser-qualite-azd")
+        orchestrate = read_skill_bundle("piloter-workflow-azd")
 
         self.assertIn("public-contract.json", discovery)
         self.assertIn("exact token/path/selector", discovery)
@@ -124,8 +117,8 @@ class SkillSeriesContractTests(unittest.TestCase):
             self.assertRegex(text, r"token|selector|attribut")
 
     def test_discovery_contradictions_survive_into_final_risks_and_blind_spots(self) -> None:
-        orchestrate = read_skill("piloter-workflow-azd")
-        verify = read_skill("prouver-resultat-azd")
+        orchestrate = read_skill_bundle("piloter-workflow-azd")
+        verify = read_skill_bundle("prouver-resultat-azd")
 
         self.assertIn("discovery.contradictions", orchestrate)
         self.assertIn("discovery.blind_spots", orchestrate)

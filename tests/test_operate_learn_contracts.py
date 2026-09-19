@@ -2,6 +2,7 @@ import re
 import unittest
 from pathlib import Path
 
+from _skill_helpers import read_skill_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
@@ -11,13 +12,9 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def read_skill(name: str) -> str:
-    return read(f"skills/{name}/SKILL.md")
-
-
 class OperateLearnContractTests(unittest.TestCase):
     def test_operate_requires_incident_canary_rollback_evidence_and_fail_closed_capabilities(self) -> None:
-        text = read_skill("surveiller-livraison-azd")
+        text = read_skill_bundle("surveiller-livraison-azd")
 
         for token in (
             "host_capabilities",
@@ -43,7 +40,7 @@ class OperateLearnContractTests(unittest.TestCase):
         self.assertRegex(text, re.compile(r"rollback.*active_version_proof", re.IGNORECASE | re.DOTALL))
 
     def test_learn_is_restart_safe_branch_scoped_provenance_drift_redaction_and_fail_closed(self) -> None:
-        text = read_skill("conserver-apprentissages-azd")
+        text = read_skill_bundle("conserver-apprentissages-azd")
         details = read("skills/conserver-apprentissages-azd/references/learn-details.md")
 
         for token in (

@@ -1,25 +1,18 @@
 import re
 import unittest
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-
-
-def read_skill(name: str) -> str:
-    return (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+from _skill_helpers import assert_language_rule, read_skill, read_skill_bundle
 
 
 class DeliveryAndLearningSkillTests(unittest.TestCase):
     def test_ship_integrates_verifies_documents_and_respects_authority(self) -> None:
-        text = read_skill("livrer-changement-azd")
+        skill_text = read_skill("livrer-changement-azd")
+        bundle = read_skill_bundle("livrer-changement-azd")
 
-        self.assertRegex(text, r"(?m)^name: livrer-changement-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertNotIn("TODO", text)
+        self.assertRegex(skill_text, r"(?m)^name: livrer-changement-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertNotIn("TODO", bundle)
 
         for contract in (
             "dependency order",
@@ -34,18 +27,18 @@ class DeliveryAndLearningSkillTests(unittest.TestCase):
             "explicit authority",
             "authority-request",
         ):
-            self.assertIn(contract, text)
+            self.assertIn(contract, bundle)
 
-        self.assertRegex(text, re.compile(r"partial|blocked|failed", re.IGNORECASE))
+        self.assertRegex(bundle, re.compile(r"partial|blocked|failed", re.IGNORECASE))
 
     def test_operate_observes_canaries_and_recovers_under_authority(self) -> None:
-        text = read_skill("surveiller-livraison-azd")
+        skill_text = read_skill("surveiller-livraison-azd")
+        bundle = read_skill_bundle("surveiller-livraison-azd")
 
-        self.assertRegex(text, r"(?m)^name: surveiller-livraison-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertNotIn("TODO", text)
+        self.assertRegex(skill_text, r"(?m)^name: surveiller-livraison-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertNotIn("TODO", bundle)
 
         for contract in (
             "canary",
@@ -61,18 +54,18 @@ class DeliveryAndLearningSkillTests(unittest.TestCase):
             "production",
             "evidence",
         ):
-            self.assertIn(contract, text)
+            self.assertIn(contract, bundle)
 
-        self.assertRegex(text, re.compile(r"partial|blocked|failed", re.IGNORECASE))
+        self.assertRegex(bundle, re.compile(r"partial|blocked|failed", re.IGNORECASE))
 
     def test_learn_records_scoped_falsifiable_and_governed_knowledge(self) -> None:
-        text = read_skill("conserver-apprentissages-azd")
+        skill_text = read_skill("conserver-apprentissages-azd")
+        bundle = read_skill_bundle("conserver-apprentissages-azd")
 
-        self.assertRegex(text, r"(?m)^name: conserver-apprentissages-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertNotIn("TODO", text)
+        self.assertRegex(skill_text, r"(?m)^name: conserver-apprentissages-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertNotIn("TODO", bundle)
 
         for contract in (
             "provenance",
@@ -86,19 +79,19 @@ class DeliveryAndLearningSkillTests(unittest.TestCase):
             "future decision",
             "secrets",
         ):
-            self.assertIn(contract, text)
+            self.assertIn(contract, bundle)
 
-        self.assertRegex(text, re.compile(r"anecdote|single preference", re.IGNORECASE))
-        self.assertRegex(text, re.compile(r"never.*universal", re.IGNORECASE))
+        self.assertRegex(bundle, re.compile(r"anecdote|single preference", re.IGNORECASE))
+        self.assertRegex(bundle, re.compile(r"never.*universal", re.IGNORECASE))
 
     def test_evolve_uses_isolated_protected_evaluation_without_reward_hacking(self) -> None:
-        text = read_skill("ameliorer-workflow-azd")
+        skill_text = read_skill("ameliorer-workflow-azd")
+        bundle = read_skill_bundle("ameliorer-workflow-azd")
 
-        self.assertRegex(text, r"(?m)^name: ameliorer-workflow-azd$")
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
-        self.assertNotIn("TODO", text)
+        self.assertRegex(skill_text, r"(?m)^name: ameliorer-workflow-azd$")
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
+        self.assertNotIn("TODO", bundle)
 
         for contract in (
             "falsifiable hypothesis",
@@ -120,10 +113,10 @@ class DeliveryAndLearningSkillTests(unittest.TestCase):
             "human-gate",
             "authority policy",
         ):
-            self.assertIn(contract, text)
+            self.assertIn(contract, bundle)
 
-        self.assertRegex(text, re.compile(r"incomplete|interrupted", re.IGNORECASE))
-        self.assertRegex(text, re.compile(r"cannot|must not|never", re.IGNORECASE))
+        self.assertRegex(bundle, re.compile(r"incomplete|interrupted", re.IGNORECASE))
+        self.assertRegex(bundle, re.compile(r"cannot|must not|never", re.IGNORECASE))
 
 
 if __name__ == "__main__":

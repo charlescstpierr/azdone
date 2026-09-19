@@ -1,23 +1,16 @@
 import unittest
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-
-
-def read_skill(name: str) -> str:
-    return (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+from _skill_helpers import assert_language_rule, read_skill, read_skill_bundle
 
 
 class DesignExecutionSkillContractTests(unittest.TestCase):
     def test_m05_design_covers_human_facing_design_gate(self) -> None:
-        text = read_skill("concevoir-experience-azd")
+        skill_text = read_skill("concevoir-experience-azd")
+        bundle = read_skill_bundle("concevoir-experience-azd")
 
-        self.assertIn("name: concevoir-experience-azd", text)
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
+        self.assertIn("name: concevoir-experience-azd", skill_text)
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
 
         for token in (
             "web",
@@ -34,15 +27,15 @@ class DesignExecutionSkillContractTests(unittest.TestCase):
             "human authority",
             "evidence-first",
         ):
-            self.assertIn(token, text)
+            self.assertIn(token, bundle)
 
     def test_m06_plan_covers_dependency_and_proof_mapping(self) -> None:
-        text = read_skill("planifier-travail-azd")
+        skill_text = read_skill("planifier-travail-azd")
+        bundle = read_skill_bundle("planifier-travail-azd")
 
-        self.assertIn("name: planifier-travail-azd", text)
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
+        self.assertIn("name: planifier-travail-azd", skill_text)
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
 
         for token in (
             "dependency graph",
@@ -55,15 +48,15 @@ class DesignExecutionSkillContractTests(unittest.TestCase):
             "evidence",
             "ordering",
         ):
-            self.assertIn(token, text)
+            self.assertIn(token, bundle)
 
     def test_m07_branch_lab_covers_isolation_and_safe_integration(self) -> None:
-        text = read_skill("isoler-travail-azd")
+        skill_text = read_skill("isoler-travail-azd")
+        bundle = read_skill_bundle("isoler-travail-azd")
 
-        self.assertIn("name: isoler-travail-azd", text)
-        self.assertNotIn("PROVISIONAL", text)
-        self.assertIn("Français", text)
-        self.assertIn("English", text)
+        self.assertIn("name: isoler-travail-azd", skill_text)
+        self.assertNotIn("PROVISIONAL", skill_text)
+        assert_language_rule(self, bundle)
 
         for token in (
             "same repository",
@@ -82,7 +75,7 @@ class DesignExecutionSkillContractTests(unittest.TestCase):
             "native Git",
             "evidence",
         ):
-            self.assertIn(token, text)
+            self.assertIn(token, bundle)
 
 
 if __name__ == "__main__":
