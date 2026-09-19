@@ -5,67 +5,43 @@ description: "Construire le plus petit changement de code ou de contenu valide a
 
 # Étape 08 · Construire la solution
 
-Construis le plus petit changement valide. Implement the smallest valid change. Interfaces publiques equivalentes: Français and English.
+Construire le plus petit changement valide (`smallest valid change`) avec TDD strict.
 
 ## Quick start
 
 Invocation: `$construire-solution-azd "Ajoute le champ JSON public-contract.json#/status sans renommer les tokens existants."`
 
-Verdict attendu: test `red` capture l'absence du champ, patch minimal, test `green`, fichiers changes, risque residuel.
+Verdict attendu: test `red` capture l'absence du champ, patch minimal, test `green`, fichiers changés, risque résiduel.
 
-## Utiliser quand / Use when
+## Utiliser quand
 
-Utilise ce skill quand le resultat est assez clair pour coder, qu'un failing test existe ou qu'un plan accepte doit devenir un patch minimal.
+- Un contrat public est accepté et un test rouge ou un plan approuvé existe.
+- Le résultat attendu est assez clair pour coder directement.
+- Une carte est `Ready` avec Proof Contract et Readiness Forecast frais.
 
-## Boucle / Loop
+## Procédure
 
-1. Confirmer que la carte est `Ready`, que son Proof Contract et son Readiness Forecast sont frais et que le Route Pack, Language Pack, ADR et contexte minimal sont résolus. Sinon retourner à la première gate manquante.
-2. Pars du public seam, pas des internals.
-3. RED: écris ou modifie d'abord un test qui échoue; enregistre commande, sortie, commit/worktree et raison de l'échec.
-4. Si du code candidat précède le test, supprime-le ou isole-le hors candidate scope, puis repars du test rouge.
-5. GREEN: implémente uniquement ce qui rend ce test vert.
-6. REFACTOR: simplifie seulement après le vert, sans changer le comportement.
-7. Rejoue le test et les checks natifs proportionnés; enregistre l'evidence `green`.
-8. Pour une surface humaine, implémente chaque ligne de la `UI acceptance matrix`: états non nominaux, selectors/attributes publics exacts, clavier, live region, viewports et artefacts.
-9. Ajoute un test qui échoue si un état requis existe seulement dans la prose ou le JavaScript sans représentation vérifiable.
-10. Si l'exécution révèle un prérequis, une décision ou une idée hors carte, ne pas l'absorber: créer une carte `Draft` liée et poursuivre seulement si la carte active reste valide.
-11. Si une preuve échoue, classer la première hypothèse invalidée (`readiness | understanding | diagnosis | design | plan | build`) et retourner à cette gate. Ne pas affaiblir le claim ni modifier l'oracle pour passer.
-12. Arrête la tranche quand elle est verte et prouvée.
+1. Vérifier que la carte est `Ready`, que Proof Contract et Readiness Forecast sont frais, et que Route Pack, Language Pack, ADR et contexte minimal sont résolus, sinon retourner à la première gate manquante.
+2. Partir du seam public, pas des internals.
+3. RED : écrire ou modifier d'abord un test qui échoue ; si du code candidat le précède, supprime-le ou isole-le hors candidate scope puis repartir du test rouge, et enregistrer commande, sortie, commit/worktree et raison de l'échec.
+4. GREEN : implémenter uniquement ce qui rend ce test vert.
+5. REFACTOR : simplifier seulement après le vert sans changer le comportement, puis rejouer test et checks natifs proportionnés et enregistrer l'evidence `green`.
+6. Pour une surface humaine, implémenter chaque ligne de la `UI acceptance matrix` (états non nominaux, selectors/attributes publics exacts, clavier, live region, viewports, artefacts) et ajouter un test qui échoue si un état requis n'existe que dans la prose ou le JavaScript.
+7. Si l'exécution révèle un prérequis, une décision ou une idée hors carte, créer une carte `Draft` liée sans l'absorber, et poursuivre seulement si la carte active reste valide.
+8. Si une preuve échoue, classer la première hypothèse invalidée (`readiness | understanding | diagnosis | design | plan | build`) et retourner à cette gate, sans affaiblir le claim ni modifier l'oracle.
+9. Arrêter la tranche quand elle est verte et prouvée.
 
-## Règles / Rules
+## Sortie
 
-- Use TDD and project-native patterns.
-- Garde le `smallest valid change`.
-- Applique Ponytail: supprimer avant d'ajouter, reutiliser avant d'inventer, refuser les abstractions sans complexite reelle.
-- Preserve safety, accessibility, user changes and existing tests.
-- Garde evaluator, reviewer, hidden oracle et protected regressions hors du write scope candidat.
-- Si le besoin reste ambigu, retourne à `$clarifier-objectif-azd` ou `$concevoir-experience-azd`.
-- Ne remplace jamais un token normatif par un synonyme: paths, schema fields, IDs, roles, attributes et viewport dimensions restent exacts.
+Le skill rend `build` ([build-output.md](references/build-output.md)) avec les champs card_id, readiness_forecast, proof_contract, author_id, worktree, write_scope, red, green, refactor, changed_files, protected_out_of_scope, discovered_draft_cards, causal_return, verdict.
 
-## Sortie / Output
+## Arrêt et interdits
 
-```yaml
-build:
-  card_id: ""
-  readiness_forecast: fresh | stale | blocked
-  proof_contract: locked | missing | stale
-  author_id: ""
-  worktree: ""
-  write_scope: []
-  red:
-    command: ""
-    evidence: ""
-  green:
-    command: ""
-    evidence: ""
-  refactor:
-    command: ""
-    evidence: ""
-  changed_files: []
-  protected_out_of_scope: []
-  discovered_draft_cards: []
-  causal_return: none | readiness | understanding | diagnosis | design | plan | build
-  verdict: green | partial | blocked | failed
-```
+- Ne jamais écrire de code candidat avant un test rouge (TDD strict).
+- Garder le `smallest valid change` ; appliquer Ponytail : supprimer avant d'ajouter, réutiliser avant d'inventer, refuser les abstractions sans complexité réelle.
+- Préserver safety, accessibility, les changements utilisateur et les tests existants.
+- Garder evaluator, reviewer, hidden oracle et protected regressions hors du write scope candidat.
+- Si le besoin reste ambigu, retourner à `$clarifier-objectif-azd` ou `$concevoir-experience-azd`.
+- Ne jamais remplacer un token normatif par un synonyme : paths, schema fields, IDs, roles, attributes et dimensions de viewport restent exacts.
 
-Stop when the assigned slice is green and no scoped failure remains. Sinon rends `partial`, `blocked` ou `failed` avec le blocker exact. Garde code, paths, commands and verdicts identical in Français and English.
+Répondre dans la langue de l'utilisateur. Commandes, chemins, identifiants, gates et verdicts restent identiques en français et en anglais.
