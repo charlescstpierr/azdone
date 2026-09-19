@@ -1,0 +1,22 @@
+{
+  "name": "azdone",
+  "displayName": "AZDone",
+  "version": "0.2.0-preview",
+  "description": "Couche d'entree /azd par-dessus 16 Agent Skills de realisation, avec politique de confiance declarative.",
+  "author": {
+    "name": "Charles St-Pierre"
+  },
+  "homepage": "https://github.com/charlescstpierr/azdone",
+  "repository": "https://github.com/charlescstpierr/azdone",
+  "keywords": [
+    "azdone",
+    "azd",
+    "agent-skills",
+    "workflow",
+    "trust-policy",
+    "subagents"
+  ],
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json"
+}

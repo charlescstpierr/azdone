@@ -6,13 +6,17 @@ AZDone sépare le **contrat de décision** du **moteur d’exécution**.
 Humain
   │ objectif, décisions, autorité
   ▼
-Host compatible : Codex, Claude Code, autre host Agent Skills
+/azd, /azd-setup : couche d’entrée
+  │ lit trust.yaml, classe la demande, choisit un playbook
+  ▼
+Host compatible : Codex, Claude Code, Cursor, autre host Agent Skills
   │ charge les skills et exécute Git, shell, navigateur, tests, subagents
   ▼
-AZDone : 16 SKILL.md + références
+AZDone : 16 SKILL.md + références, agents/*, hooks/* optionnels
   │ prescrit routes, cartes, gates, preuves, handoffs et limites
   ▼
 Dépôt utilisateur
+    .azdone/trust.yaml ─ trust-ledger.md ─ decisions.tsv
     Boussole ─ Langage partagé ─ System Success Map
          └──── Project Decision Graph ────┐
                                           ▼
@@ -21,6 +25,19 @@ Dépôt utilisateur
                                           ▼
                                   preuves et verdict
 ```
+
+## Couche d’entrée
+
+`/azd` (couche par-dessus les 16 skills, ne les remplace pas) lit
+`.azdone/trust.yaml`, classe la demande par capacité et par risque, choisit un
+des huit playbooks, et applique la politique de confiance à chaque action
+sensible. `/azd-setup` écrit ou met à jour ce fichier de façon idempotente.
+Les huit playbooks vivent dans `skills/azd/playbooks/`. Les agents
+(`agents/azd-scout.md`, `azd-builder.md`, `azd-verifier.md`,
+`azd-reviewer.md`, `azd-watcher.md`) portent les cinq rôles de délégation.
+Les hooks (`hooks/`) sont optionnels : sous Claude Code et Cursor, ils font
+respecter `trust.yaml` en `enforcement: enforced` ; ils ne sont jamais requis
+pour invoquer un skill, et leur suppression ne bloque rien.
 
 ## Trois frontières
 
@@ -105,9 +122,8 @@ exécuté.
 - daemon d’observation;
 - vault Obsidian physique;
 - packs de conformité par plateforme;
-- installateur ou updater;
-- preuve Pilot 0;
-- plugin de distribution.
+- installateur ou updater automatisé au-delà de `scripts/install.sh`;
+- preuve Pilot 0.
 
 Ces absences sont des limites, pas des fonctions implicites.
 

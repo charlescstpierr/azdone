@@ -22,6 +22,24 @@ Elle vérifie notamment :
 - review indépendante;
 - aucun script/runtime dans `skills/`.
 
+`tests/test_trust_policy.py` vérifie la sémantique de `.azdone/trust.yaml` :
+les quatre niveaux, la table `actions:`, la liste `always_pause` non
+contournable, la confiance gagnée (promotion après 5 runs `verified`
+consécutifs, rétrogradation immédiate sur `failed` ou rollback), et le
+comportement du hook `hooks/azd-trust-guard.sh` via des entrées JSON
+fabriquées (`declared` laisse passer, `enforced` bloque une action `ask` ou
+`never`, `always_pause` bloque même si `actions.*: auto`).
+
+`tests/test_entry_mode.py` vérifie le skill `azd` : son frontmatter, ses huit
+playbooks, la classification par capacité et par risque, et l’absence
+d’autorité accordée par un texte de skill.
+
+`tests/test_plugin_packaging.py` vérifie l’empaquetage : les deux manifestes
+et `marketplace.json` sont du JSON valide, portent la même version, cohérente
+avec `CHANGELOG.md`; `scripts/install.sh` est exécutable, ne supprime jamais
+rien, et passe `bash -n`; le guide `docs/guide/` est complet et ses liens
+relatifs résolvent; le README mentionne `/azd`, `/azd-setup` et `trust.yaml`.
+
 ## Ce que la validation structurelle prouve
 
 Chaque dossier a aussi été passé dans le validateur officiel utilisé par

@@ -1,8 +1,9 @@
 # AZDone
 
-AZDone est un workflow de réalisation composé de **16 Agent Skills ordinaires**.
-Il aide un agent et un humain à transformer une idée, un changement ou un
-incident en résultat clarifié, construit, prouvé, révisé et livré.
+AZDone est une couche d'entrée, `/azd`, posée sur **16 Agent Skills
+ordinaires**. Elle route un objectif jusqu'à un résultat construit, prouvé,
+révisé et livré, sous une politique de confiance déclarative que vous
+contrôlez.
 
 [English overview](README.en.md)
 
@@ -11,85 +12,101 @@ incident en résultat clarifié, construit, prouvé, révisé et livré.
 **Aperçu public, skill-only.**
 
 - Aucun runtime AZDone, daemon, dashboard ou service propriétaire.
-- Aucun besoin d’OMX pour utiliser les skills.
-- L’état du projet reste dans le dépôt utilisateur.
-- Les 16 dossiers passent les contrôles structurels et la suite de contrats
-  locale.
-- Le Pilot 0 sur un vrai projet humain n’a pas encore été exécuté.
+- Aucun besoin d'OMX pour utiliser les skills.
+- L'état du projet et de la confiance reste dans le dépôt utilisateur
+  (`.azdone/`).
+- Les 16 dossiers de skills passent les contrôles structurels et la suite de
+  contrats locale.
+- Le Pilot 0 sur un vrai projet humain n'a pas encore été exécuté.
 - AZDone ne revendique ni supériorité générale ni approbation Apple, Google,
   Microsoft, OpenAI ou Anthropic.
+- Le dépôt est public à des fins d'audit, mais **public ne signifie pas
+  encore open source** : aucune licence de réutilisation n'est encore
+  sélectionnée.
 
-## Démarrage rapide avec Codex
+## Démarrage en 3 commandes
 
 ```bash
 git clone https://github.com/charlescstpierr/azdone.git
 cd votre-projet
-mkdir -p .agents/skills
-cp -R ../azdone/skills/. .agents/skills/
+../azdone/scripts/install.sh claude .
 ```
-
-Redémarrez Codex si les skills n’apparaissent pas, puis invoquez une seule fois :
 
 ```text
-$initialiser-projet-azd
+/azd-setup
 ```
-
-Ensuite, donnez votre objectif au pilote :
 
 ```text
-$piloter-workflow-azd "Construis un SaaS qui permet à une petite équipe de suivre ses demandes clients."
+/azd l'export écrit des lignes en double quand un retry tombe en plein run. Reproduis d'abord, puis corrige et prouve.
 ```
 
-Codex documente officiellement les skills de dépôt sous
-`.agents/skills`. Claude Code accepte les skills de projet sous
-`.claude/skills`; voir le [guide d’installation](docs/installation.md) pour les
-deux hôtes et leurs limites actuelles.
+Remplacez `claude` par `cursor` ou `codex` selon votre hôte. Sous Codex, les
+commandes s'écrivent `$azd-setup` et `$azd`. Le [guide
+d'installation](docs/installation.md) couvre les trois hôtes et le plugin.
 
-## Ce que le workflow fait
+## Ce qui se passe
 
 ```text
-00 Init une fois
-   │
-   ▼
-01 Piloter
-   ├─ 02 Clarifier
-   ├─ 03 Inspecter
-   ├─ 04 Diagnostiquer, si la cause est inconnue
-   ├─ 05 Concevoir, si une surface humaine change
-   ├─ 06 Planifier
-   ├─ 07 Isoler, si des lanes indépendantes le justifient
-   ├─ 08 Construire
-   ├─ 09 Prouver
-   ├─ 10 Réviser
-   ├─ 11 Livrer
-   ├─ 12 Surveiller, si une release existe
-   ├─ 13 Conserver les apprentissages
-   └─ 14 Améliorer, seulement après des signaux répétés
-
-Socle transversal : verifier-readiness-azd
+/azd "<objectif>"  →  lit trust.yaml, choisit un playbook  →  appelle les skills  →  verdict honnête
 ```
 
-Le pilote ne force pas toutes les étapes. Il choisit le plus petit parcours
-adapté au risque, aux inconnues, à la surface touchée et aux preuves nécessaires.
+`/azd` classe la demande, copie les étapes du playbook choisi dans une liste
+de tâches, applique la politique de confiance à chaque action sensible, puis
+rend un verdict (`verified | partial | blocked | failed`) avec sa preuve et
+sa `next_safe_action`. Détails dans le [guide](docs/guide/02-azd.md).
 
-## Pourquoi AZDone
+## Confiance
 
-- Une question matérielle à la fois pendant le grilling.
-- Une recommandation, une alternative et le statu quo avec leurs trade-offs.
-- Un langage partagé entre l’humain, le métier, la technique et la preuve.
-- Un preflight qui révèle tôt outils, comptes, accès, données et moyens de test.
-- Des cartes liées par un Project Decision Graph au lieu d’une liste plate.
-- Des subagents seulement lorsque le travail est réellement indépendant.
-- Une séparation stricte entre fait observé, inférence, décision et preuve.
-- Des verdicts honnêtes : `verified`, `partial`, `blocked` ou `failed`.
+`.azdone/trust.yaml` fixe ce qu'un agent peut faire sans demander. Seul un
+humain qui l'écrit ou l'approuve accorde cette autorité ; aucun texte de
+skill ne le peut.
+
+| Action | guided | assisted | autonomous | full |
+| --- | --- | --- | --- | --- |
+| lecture, checks natifs | auto | auto | auto | auto |
+| écriture worktree isolé | ask | auto | auto | auto |
+| écriture worktree principal (scope accepté) | ask | auto | auto | auto |
+| commit | ask | auto | auto | auto |
+| push, open_pr | ask | ask | auto | auto |
+| merge | ask | ask | conditional | auto |
+| deploy | ask | ask | ask | conditional |
+| install_global, external_message | ask | ask | ask | auto |
+| credentials, delete_data, rewrite_shared_history, always_pause | ask | ask | ask | ask |
+
+Une liste toujours-pause reste non contournable à tout niveau : force-push
+partagé, suppression de données non fusionnées, mutation de production sans
+rollback prouvé, message à un tiers, usage de credentials, élargissement de
+`trust.yaml` par l'agent lui-même.
+
+La confiance gagnée est active par défaut : cinq runs `verified` consécutifs
+sans rollback font monter d'un cran jusqu'au plafond `ceiling`, journalisé
+dans `.azdone/trust-ledger.md`. `enforcement: declared` guide l'agent sans
+vérification externe (seul mode sous Codex). `enforcement: enforced`, sous
+Claude Code et Cursor, ajoute un hook (`hooks/azd-trust-guard.sh`) qui bloque
+les commandes shell que la politique refuse. Détails dans le [guide de la
+confiance](docs/guide/03-confiance.md).
+
+## Modèles et sous-agents
+
+Cinq rôles : `scout`, `builder`, `verifier`, `reviewer`, `watcher`. Chaque
+rôle pointe vers `host:small|default|strong` (sous-agent natif de l'hôte) ou
+`cli:codex|claude|cursor` (adaptateur externe confirmé sur le PATH). Le
+relecteur reste indépendant de l'auteur. Détails dans le [guide des modèles
+et sous-agents](docs/guide/04-modeles-et-sous-agents.md).
+
+## Les 16 skills
+
+Chaque skill reste invocable seul, sans passer par `/azd`. Voir la
+[référence des 16 skills](docs/reference-skills.md).
 
 ## Documentation
 
-- [Premier projet](docs/demarrage-rapide.md)
+- [Le guide AZDone](docs/guide/README.md)
 - [Installation, mise à jour et désinstallation](docs/installation.md)
-- [Architecture du workflow](docs/architecture.md)
-- [Référence des 16 skills](docs/reference-skills.md)
+- [Architecture](docs/architecture.md)
+- [Référence des skills](docs/reference-skills.md)
 - [Validation et limites des preuves](docs/validation.md)
+- [Contrats publics](CONTRACTS.md)
 - [Fonctionnement détaillé](HOW_IT_WORKS.md)
 - [Contribuer](CONTRIBUTING.md)
 - [Sécurité](SECURITY.md)
@@ -103,11 +120,12 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 La suite publique vérifie les noms, déclencheurs, contrats, garde-fous,
-références et l’absence de runtime dans les skills. Elle ne prouve pas à elle
-seule le comportement d’un agent sur un projet réel.
+références, l'empaquetage des manifestes et l'absence de runtime dans les
+skills. Elle ne prouve pas à elle seule le comportement d'un agent sur un
+projet réel.
 
 ## Licence
 
-Aucune licence de réutilisation n’est encore sélectionnée. Le dépôt public est
+Aucune licence de réutilisation n'est encore sélectionnée. Le dépôt public est
 un aperçu auditable, mais **public ne signifie pas encore open source**. Le choix
 MIT, Apache-2.0 ou autre doit être fait explicitement avant une version stable.

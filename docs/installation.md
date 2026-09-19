@@ -1,7 +1,37 @@
 # Installer, mettre à jour et retirer AZDone
 
-AZDone est distribué comme dossiers Agent Skills. L’installation consiste à
-copier `skills/*` dans l’emplacement de skills reconnu par l’hôte.
+AZDone est distribué comme dossiers Agent Skills, plus une couche d’entrée
+`/azd` et `/azd-setup`. L’installation consiste à copier `skills/*` et
+`agents/*` dans l’emplacement reconnu par l’hôte, ou à passer par
+`scripts/install.sh` ou par le plugin. Trois hôtes sont couverts : Codex,
+Claude Code et Cursor.
+
+## Avec `scripts/install.sh`
+
+```bash
+git clone https://github.com/charlescstpierr/azdone.git
+cd votre-projet
+../azdone/scripts/install.sh claude .
+```
+
+Remplacez `claude` par `cursor` ou `codex`. Le script copie uniquement les
+dossiers `*-azd`, `azd` et `azd-setup`, jamais un autre fichier du dépôt
+cible, et copie les sous-agents `agents/*.md` vers `.claude/agents` ou
+`.cursor/agents` (Codex n’a pas de sous-agents dédiés). Il est idempotent et
+ne supprime jamais rien.
+
+## Avec le plugin Claude Code ou Cursor
+
+```bash
+claude plugin marketplace add charlescstpierr/azdone
+claude plugin install azdone@azdone
+```
+
+Le dépôt contient `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`
+et `.cursor-plugin/plugin.json`. L’installation par plugin namespace les
+commandes : `/azdone:azd`, `/azdone:azd-setup`. La copie manuelle ou par
+script donne les formes courtes `/azd`, `/azd-setup` (`$azd`, `$azd-setup`
+sous Codex).
 
 ## Codex : installation repo-locale recommandée
 
@@ -44,12 +74,29 @@ Le format de base est compatible, mais le parcours AZDone complet n’a pas
 encore reçu de Pilot 0 sur Claude Code. Ne transformez pas la reconnaissance des
 skills en preuve d’équivalence comportementale.
 
-## Vérifier l’installation
+## Cursor : emplacement compatible
 
-Le dépôt cible doit contenir 16 dossiers AZDone :
+Cursor lit les skills de projet dans `.cursor/skills` (auto-découverte sans
+manifeste) ou via `.cursor-plugin/plugin.json` pour une installation en
+plugin.
 
 ```bash
-find .agents/skills -mindepth 1 -maxdepth 1 -type d -name '*-azd' | wc -l
+cd votre-projet
+mkdir -p .cursor/skills
+cp -R ../azdone/skills/. .cursor/skills/
+```
+
+Même limite qu’avec Claude Code : le format est compatible, le Pilot 0 sur
+Cursor n’a pas été exécuté.
+
+## Vérifier l’installation
+
+Le dépôt cible doit contenir 16 dossiers de skills existants, plus `azd` et
+`azd-setup`, soit 18 dossiers au total :
+
+```bash
+find .agents/skills -mindepth 1 -maxdepth 1 -type d \
+  \( -name '*-azd' -o -name 'azd' -o -name 'azd-setup' \) | wc -l
 ```
 
 Puis :
@@ -100,4 +147,6 @@ migrer ou les supprimer.
 - Pas de migration automatique.
 - Pas de preuve Pilot 0 sur environnement propre.
 - Pas de licence de réutilisation sélectionnée à ce stade.
+- `enforcement: enforced` du hook de confiance n’existe que sous Claude Code
+  et Cursor ; Codex reste en politique déclarée seulement.
 

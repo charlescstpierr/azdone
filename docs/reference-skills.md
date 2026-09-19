@@ -2,6 +2,15 @@
 
 Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 
+## Entrée
+
+| Skill | À utiliser quand… | Sortie principale |
+| --- | --- | --- |
+| `azd` | point d’entrée pour toute demande de travail rigoureux (`/azd`, `$azd`) | playbook choisi, liste de tâches, verdict honnête |
+| `azd-setup` | première configuration ou relecture de `.azdone/trust.yaml` (`/azd-setup`, `$azd-setup`) | trust.yaml écrit, adaptateurs détectés, `next_safe_action` |
+
+## Les 16 skills
+
 | Repère | Skill | À utiliser quand… | Sortie principale |
 | --- | --- | --- | --- |
 | 00 | `initialiser-projet-azd` | AZDone entre pour la première fois dans un dépôt | conventions et pointeurs repo-locaux |
@@ -36,6 +45,19 @@ skill-mutation : preuves répétées → 14
 
 Ces routes sont indicatives. Une gate invalide renvoie à la première cause
 touchée plutôt qu’automatiquement au code.
+
+## Les 8 playbooks de `azd`
+
+| Playbook | Pour |
+| --- | --- |
+| `changement-code` | un changement de code ordinaire, du plan à la livraison |
+| `correction-bug` | reproduire un défaut avant de le corriger |
+| `investigation` | une question en lecture seule, aucune écriture |
+| `surface-humaine` | un changement qu’un utilisateur va voir ou toucher |
+| `release` | pousser, ouvrir une PR, fusionner, déployer sous garde-fous |
+| `run-autonome` | un travail long avec un prédicat de sortie déclaré |
+| `reprise-de-session` | reprendre un travail interrompu depuis la dernière preuve |
+| `babysit-pr` | mener une PR jusqu’à mergeable : conflits, threads, CI |
 
 ## Invariants publics
 
