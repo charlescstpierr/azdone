@@ -18,6 +18,8 @@ Observer un état externe (CI, PR, canary, incident) et se réveiller sur évén
 
 Le context packet (voir `skills/azd/references/context-packet.md`) : `exit_condition` (l'événement ou l'état terminal attendu), `paths`. Ne jamais déclencher un push, un merge ou un déploiement.
 
+Réveil par hôte : Claude Code et Cursor via `/loop` (ou `ScheduleWakeup` quand l'hôte l'expose) ; Codex n'a aucun mécanisme de réveil vérifié, sonder par relance manuelle et le dire.
+
 Sans `gh` sur le `PATH`, rendre `watcher-unavailable` et le dire.
 
 ## Interdits

@@ -10,12 +10,22 @@ PLAYBOOKS = [
     "changement-code.md",
     "correction-bug.md",
     "investigation.md",
+    "prototype.md",
     "surface-humaine.md",
     "release.md",
     "run-autonome.md",
     "reprise-de-session.md",
     "babysit-pr.md",
 ]
+
+TRUST_SETUP_DIR = ROOT / "skills" / "azd-setup"
+TRUST_POLICY = AZD_SKILL / "references" / "trust-policy.md"
+TRUST_EXAMPLE = TRUST_SETUP_DIR / "references" / "trust.example.yaml"
+MODEL_ROUTING = AZD_SKILL / "references" / "model-routing.md"
+RUN_AUTONOME = AZD_SKILL / "playbooks" / "run-autonome.md"
+
+VALID_AGENT_MODELS = {"haiku", "sonnet", "opus", "inherit"}
+TOOLS_TOKEN = re.compile(r"^[A-Za-z][A-Za-z0-9]*(\([^)]*\))?$")
 
 AGENT_FILES = [
     "azd-scout.md",
@@ -42,6 +52,7 @@ EM_DASH_SCAN_ROOTS = [
     ROOT / "hooks",
     ROOT / "scripts",
     ROOT / "docs" / "guide",
+    ROOT / ".github" / "workflows",
 ]
 EM_DASH_EXCLUDED_FILES = {
     ROOT / "hooks" / "azd-trust-guard.sh",
@@ -87,7 +98,7 @@ class EntryModeSkillTests(unittest.TestCase):
         line_count = len(text.splitlines())
         self.assertLessEqual(line_count, 120, f"SKILL.md has {line_count} lines")
 
-    def test_eight_playbooks_exist_are_short_and_carry_predicate_and_skill(self) -> None:
+    def test_nine_playbooks_exist_are_short_and_carry_predicate_and_skill(self) -> None:
         failures = []
         skill_ref = re.compile(r"\$[a-z][a-z0-9-]*-azd\b")
 
@@ -178,6 +189,52 @@ class EntryModeSkillTests(unittest.TestCase):
 
         self.assertEqual([], failures)
 
+    def test_record_and_witness_cited_in_azd_skill(self) -> None:
+        text = read_text(AZD_SKILL / "SKILL.md")
+        self.assertIn("record", text)
+        self.assertIn("witness", text)
+
+    def test_decisions_tsv_header_with_tabs_in_run_autonome(self) -> None:
+        self.assertTrue(RUN_AUTONOME.is_file())
+        text = read_text(RUN_AUTONOME)
+        header = "ts\trun_id\titeration\tdecision\talternative_rejetee\tpreuve\tpredicat_avance"
+        self.assertIn(header, text)
+
+
+class TrustAndModelDocTests(unittest.TestCase):
+    maxDiff = None
+
+    def test_spawn_agent_present_in_trust_policy_and_example(self) -> None:
+        failures = []
+        for path in (TRUST_POLICY, TRUST_EXAMPLE):
+            self.assertTrue(path.is_file(), f"missing {path}")
+            if "spawn_agent" not in read_text(path):
+                failures.append(f"{path.name}: missing spawn_agent")
+        self.assertEqual([], failures)
+
+    def test_cli_adapter_slug_grammar_and_panels_documented(self) -> None:
+        failures = []
+        grammar = "cli:<adaptateur>:<slug>"
+        for path in (MODEL_ROUTING, TRUST_EXAMPLE):
+            self.assertTrue(path.is_file(), f"missing {path}")
+            text = read_text(path)
+            if grammar not in text:
+                failures.append(f"{path.name}: missing grammar {grammar!r}")
+            if "panels" not in text:
+                failures.append(f"{path.name}: missing 'panels'")
+        self.assertEqual([], failures)
+
+    def test_azd_setup_asks_and_outputs_ceiling(self) -> None:
+        text = read_text(TRUST_SETUP_DIR / "SKILL.md")
+        failures = []
+        if "question" not in text.lower() or "`ceiling`" not in text:
+            failures.append("azd-setup SKILL.md does not ask a ceiling question")
+        if "ceiling:" not in text:
+            failures.append("azd-setup SKILL.md output block missing ceiling:")
+        if text.count("ceiling") < 2:
+            failures.append("ceiling must appear in both the question and the output block")
+        self.assertEqual([], failures)
+
 
 class SubagentDefinitionTests(unittest.TestCase):
     maxDiff = None
@@ -217,6 +274,21 @@ class SubagentDefinitionTests(unittest.TestCase):
             fm = frontmatter(read_text(AGENTS_DIR / name))
             if fm.get("model") != model:
                 failures.append(f"{name}: expected model {model}, got {fm.get('model')}")
+        self.assertEqual([], failures)
+
+    def test_agent_model_is_valid_and_tools_syntax_is_name_or_name_pattern(self) -> None:
+        failures = []
+        for name in AGENT_FILES:
+            fm = frontmatter(read_text(AGENTS_DIR / name))
+            model = fm.get("model")
+            if model not in VALID_AGENT_MODELS:
+                failures.append(f"{name}: model {model!r} not in {sorted(VALID_AGENT_MODELS)}")
+            tools = fm.get("tools")
+            if tools:
+                for token in tools.split(","):
+                    token = token.strip()
+                    if not TOOLS_TOKEN.match(token):
+                        failures.append(f"{name}: tools token {token!r} does not match Name or Name(pattern)")
         self.assertEqual([], failures)
 
 
