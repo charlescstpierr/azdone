@@ -5,68 +5,42 @@ description: "Réviser indépendamment la conformité au contrat, la correction,
 
 # Étape 10 · Réviser la qualité
 
-Relis independamment, puis accepte ou retourne a build. Review independently, then accept or return to build. Interfaces publiques equivalentes: Français and English.
+Un reviewer indépendant de l'auteur vérifie la conformité au contrat puis la qualité, et rend un verdict honnête sur le changement borné.
 
 ## Quick start
 
-Invocation: `$reviser-qualite-azd "Révise le diff de construction contre le contrat public et les preuves fraîches."`
+Invocation : `$reviser-qualite-azd "Révise le diff de construction contre le contrat public et les preuves fraîches."`
 
-Verdict attendu: findings ranked/actionable, `author_id != reviewer_id`, decision `accept`, `return-to-build`, `blocked` ou `failed`.
+Artefact attendu : verdict `accept`, `return-to-build` (return to build), `blocked` ou `failed`, avec findings ranked/actionable et `author_id != reviewer_id`.
 
-## Utiliser quand / Use when
+## Utiliser quand
 
-Utilise ce skill quand un changement doit recevoir un second regard independant avant acceptation ou livraison.
+- Un changement borné doit recevoir un second regard indépendant avant acceptation.
+- Le contrat public ou les preuves fraîches doivent être vérifiés par quelqu'un d'autre que l'auteur.
+- Une gate de qualité, sécurité ou architecture est requise avant livraison.
 
-## Pipeline / Review pipeline
+## Procédure
 
-1. Lire `risk_level`. Rapid peut utiliser un seul reviewer ciblé; Standard couvre contrat puis qualité; Critical exige indépendance forte, surfaces sécurité/architecture/preuve et interdit toute auto-approbation.
-2. Stage 0 `planted-defect protocol`: avant de lire la conclusion auteur, choisir au moins un defect class plausible: logic, contract, security, test gap ou evidence drift.
-3. Stage 1 `contract/spec compliance`: un reviewer indépendant refait le `contract-completeness pass`.
-4. Stage 2 `quality/correctness/security/simplicity`: le reviewer vérifie correctness, security, design fit, accessibility, evidence freshness, Ponytail discipline et project-native reuse.
-5. Vérifie `author_id != reviewer_id`, diff limité au scope accepté, evaluator hors write scope et absence de cleanup ambigu.
-6. Rends des findings `ranked` et actionable avec stable finding IDs comme `SEC-01`, `TEST-02` et `ARCH-03`.
-7. Réception: l'auteur accuse réception de chaque finding, corrige le plus petit scope nécessaire ou rejette avec preuve explicite.
-8. Re-review: le reviewer valide chaque correction/rejet avec preuve indépendante.
-9. Pour un échec, indiquer la première gate invalidée; `return-to-build` seulement si la cause est réellement dans l'implémentation.
+1. Lire `risk_level` : Rapid utilise un reviewer ciblé, Standard couvre contrat puis qualité, Critical exige une indépendance forte sur sécurité, architecture et preuve, et interdit toute auto-approbation.
+2. Stage 0 `planted-defect protocol` : avant de lire la conclusion de l'auteur, choisir au moins un defect class parmi logic, contract, security, test gap ou evidence drift.
+3. Stage 1 `contract/spec compliance` : un reviewer indépendant refait le `contract-completeness pass`.
+4. Stage 2 `quality/correctness/security/simplicity` : vérifier correctness, security, design fit, accessibility, evidence freshness, discipline Ponytail et réutilisation project-native.
+5. Vérifier `author_id != reviewer_id`, diff limité au scope accepté, evaluator hors write scope et absence de cleanup ambigu.
+6. Rendre des findings `ranked` et actionable avec des stable finding IDs comme `SEC-01`, `TEST-02` et `ARCH-03`.
+7. Réception : l'auteur accuse réception de chaque finding, corrige le plus petit scope nécessaire ou rejette avec une preuve explicite.
+8. Re-review : le reviewer valide chaque correction ou rejet avec une preuve indépendante ; pour un échec, indiquer la première gate invalidée, `return-to-build` seulement si la cause est réellement dans l'implémentation.
 
-## Sortie / Output
+## Sortie
 
-```yaml
-review:
-  risk_level: rapid | standard | critical
-  reviewer_id: ""
-  author_id: ""
-  base_commit: ""
-  changed_files: []
-  planted_defect_protocol:
-    defect_class: logic | contract | security | test-gap | evidence-drift
-    attempted: true | false
-    result: found | not-found | blocked
-  author_evidence: []
-  reviewer_evidence: []
-  stage_1_contract_spec: pass | fail | blocked
-  stage_2_quality_correctness_security_simplicity: pass | fail | blocked
-  findings:
-    - id: ""
-      severity: critical | high | medium | low
-      file: ""
-      line_or_selector: ""
-      evidence: ""
-      impact: ""
-      action: ""
-      correction_status: open | fixed | rejected
-      reviewer_verdict: pending | accepted | rejected
-  causal_return: readiness | understanding | diagnosis | design | plan | build | none
-  verdict: accept | return-to-build | blocked | failed
-```
+Le skill rend un bloc `review` documenté dans [review-output.md](references/review-output.md) : `risk_level`, `reviewer_id`, `author_id`, `base_commit`, `changed_files`, `planted_defect_protocol`, `author_evidence`, `reviewer_evidence`, `stage_1_contract_spec`, `stage_2_quality_correctness_security_simplicity`, `findings`, `causal_return`, `verdict`.
 
-## Arrêt et interdits / Stop and forbidden
+## Arrêt et interdits
 
-- Arrete quand chaque finding possede preuve, impact et action minimale.
-- Reste independent de l'implementation lane; ne corrige pas silencieusement pendant la review.
-- Utilise un ou plusieurs reviewers distincts de l'auteur; un auteur ne peut pas accepter ses propres corrections.
+- Arrête quand chaque finding possède preuve, impact et action minimale.
+- Reste independent de la lane d'implémentation ; ne corrige pas silencieusement pendant la review, et un auteur ne peut jamais accepter ses propres corrections.
+- Utilise un ou plusieurs reviewers distincts de l'auteur.
 - Stable finding IDs must survive fix/re-review loops; never renumber open findings after corrections.
 - `reviewer_evidence` must be freshly observed and distinct from `author_evidence`, not a copy of the author's claim.
-- Prefere le plus petit correctif bloquant qui protege le resultat.
-- Fail closed si reviewer et author sont identiques, si l'evidence est stale, ou si le reviewer doit ecrire dans le candidate scope.
-- Garde decisions et rules identical in Français and English.
+- Fail closed si reviewer et author sont identiques, si l'evidence est stale, ou si le reviewer doit écrire dans le candidate scope ; préférer le plus petit correctif bloquant qui protège le résultat.
+
+Répondre dans la langue de l'utilisateur. Commandes, chemins, identifiants, gates et verdicts restent identiques en français et en anglais.

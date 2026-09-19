@@ -13,7 +13,7 @@ Separate evidence into four cohorts:
 - hidden_oracle: never visible to the candidate author; used only by independent evaluation.
 - protected_regressions: not visible to the candidate author; must pass before scoring, cost comparison, or promotion.
 
-If any cohort is missing, mixed, leaked, edited by the candidate, or selectively rerun, the result is fail-closed or discard.
+Held-out, hidden oracle, and protected regressions remain read-restricted until scoring. If any cohort is missing, mixed, leaked, edited by the candidate, or selectively rerun, the result is fail-closed or discard.
 
 ## Independence
 

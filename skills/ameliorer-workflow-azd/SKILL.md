@@ -5,116 +5,50 @@ description: "Améliorer le workflow par une expérience longitudinale protégé
 
 # Étape 14 · Améliorer le workflow
 
-Teste une mutation de skill seulement quand des preuves repetees la justifient. Run controlled longitudinal evolution, not self-serving drift. This is a skill-only protocol: no runtime, daemon, database, scheduler, dependency, or hidden service is required or implied. Interfaces publiques equivalentes: Français and English.
+Teste une mutation de skill seulement quand des preuves répétées la justifient, dans un protocole isolé et réversible.
 
 ## Quick start
 
-Invocation: `$ameliorer-workflow-azd "Teste si prouver-resultat-azd gagne en précision sur les évaluations protégées sans changer l'evaluator."`
+Invocation : `$ameliorer-workflow-azd "Teste si prouver-resultat-azd gagne en précision sur les évaluations protégées sans changer l'evaluator."`
 
-Verdict attendu: falsifiable hypothesis, candidate branch, isolated worktree, frozen baseline/evaluator hashes, raw train/held-out/hidden oracle/protected regressions, deux reviews independantes, promotion observation window, drift check, rollback proof, decision `keep | discard | rollback | human-gate | insufficient-evidence | fail-closed`.
+Artefact attendu : `falsifiable hypothesis`, `candidate branch`, `isolated worktree`, baseline/evaluator gelés, résultats train/held-out/hidden oracle/protected regressions, deux reviews indépendantes, observation window, drift check, rollback proof, décision `keep | discard | rollback | human-gate | insufficient-evidence | fail-closed`.
 
-## Utiliser quand / Use when
+## Utiliser quand
 
-Utilise ce skill seulement lorsqu'un signal répété, un benchmark confirmé ou une régression prouvent qu'une mutation contrôlée vaut le coût. Ne jamais l'activer automatiquement pendant un projet utilisateur; le futur builder de self-evolution reste différé.
+- Un signal répété, un benchmark confirmé ou une régression prouvent qu'une mutation contrôlée vaut le coût.
+- Une hypothèse falsifiable sur un skill existant doit être testée sans mutation immédiate.
+- Ne jamais l'activer automatiquement pendant un projet utilisateur ; le futur builder de self-evolution reste différé.
 
-## Procedure courte
+## Procédure
 
-1. Charge baseline acceptee, source runs et apprentissages gouvernes; freeze baseline snapshot, accepted behavior contract, evaluator, thresholds, prompts, fixtures and rollback bundle before any candidate edit.
-2. Formule une `falsifiable hypothesis` unique: population cible, effet attendu, metriques, seuil minimal et rejet.
-3. Arrete avec `insufficient-evidence` si l'idee vient d'une preference ponctuelle.
-4. Cree une `candidate branch` dans un `isolated worktree` du same repository.
-5. Lie `author_id`, `reviewer_id` et `second_reviewer_id` distincts; reviewers must be independent from author and from each other. Fail closed si l'auteur evalue, selectionne les cas, modifie l'evaluator, ou accepte sa candidate.
-6. Limite les ecritures aux skills candidats; enregistre baseline commit.
-7. Garde `frozen evaluator`, oracles, held-out set, protected regressions, reviewer briefs et promotion criteria outside_candidate_write_scope avec versions, paths et hashes.
-8. Avant l'essai, separe strictement `train`, `held_out_eval`, `hidden_oracle` et `protected_regressions`; the candidate author may see train only. Held-out, hidden oracle and protected regressions remain read-restricted until scoring.
-9. Ajoute des `forward-tests clean-room` pour tout nouveau skill ou comportement public: nominal, edge et rejet, hors write scope candidat.
-10. Compare baseline et candidate sous conditions identiques: runtime, model, authority, budgets, seeds, snapshots and host evidence capture.
-11. Mesure correctness et gates protegees before scoring/before comparing cost, latency, tokens, tool calls et interruptions.
-12. Invalide toute evaluation `incomplete or interrupted`; persist a resume checkpoint and rerun the full frozen comparison from the last trusted checkpoint before considering promotion.
-13. Traite evaluator edits, oracle access, skipped cases, selective reruns, threshold changes, prompt leakage, reviewer collusion ou proxy optimisation comme `reward hacking` et `discard`.
-14. Exige deux reviews independantes avant promotion; un desaccord donne `human-gate` ou `discard`.
-15. Promotion is provisional: after `keep`, run an explicit promotion observation window on fresh post-promotion runs, compare drift against baseline, and keep the rollback bundle ready until the window closes.
-16. Si l'observation, drift detection, protected regressions, or promoted commit verification fail, `rollback` vers la derniere baseline and prove recovery with fresh evidence.
-17. Toute preuve manquante, host evidence absente, author/reviewer identity conflict, modified frozen artifact, interrupted run without resume proof, or hidden-oracle exposure gives `fail-closed`.
-18. Voir [evolve-details.md](references/evolve-details.md) pour les verdicts et anti-reward-hacking complets.
+1. Charger la baseline acceptée, les source runs et les apprentissages gouvernés ; geler baseline snapshot, contrat de comportement, evaluator, thresholds, prompts, fixtures et rollback bundle avant tout edit candidat.
+2. Formuler une `falsifiable hypothesis` unique : population cible, effet attendu, métriques, seuil minimal et rejet ; arrêter avec `insufficient-evidence` si l'idée vient d'une préférence ponctuelle.
+3. Créer une `candidate branch` dans un `isolated worktree` du same repository, écritures limitées aux skills candidats, baseline commit enregistré.
+4. Lier `author_id`, `reviewer_id` et `second_reviewer_id` distincts ; fail closed si l'auteur évalue, sélectionne les cas, modifie l'evaluator ou accepte sa propre candidate.
+5. Garder `frozen evaluator`, oracles, `hidden oracle`, `protected regressions`, reviewer briefs et promotion criteria `outside_candidate_write_scope`, avec versions, paths et hashes.
+6. Séparer strictement `train`, `held_out_eval`, `hidden_oracle` et `protected_regressions` avant l'essai ; l'auteur candidat ne voit que train.
+7. Ajouter des forward-tests clean-room (nominal, edge, rejet) pour tout nouveau skill ou comportement public, hors write scope candidat.
+8. Comparer baseline et candidate sous conditions identiques : runtime, model, authority, budgets, seeds, snapshots et host evidence capture.
+9. Mesurer correctness et gates protégées before scoring/before comparing cost, latency, tokens, tool calls et interruptions.
+10. Invalider toute évaluation `incomplete or interrupted` ; persister un resume checkpoint et rejouer la comparaison gelée complète depuis le dernier checkpoint de confiance avant toute promotion.
+11. Traiter evaluator edits, oracle access, skipped cases, selective reruns, threshold changes, prompt leakage, reviewer collusion ou proxy optimisation comme `reward hacking` et `discard`.
+12. Exiger deux reviews indépendantes avant promotion ; un désaccord donne `human-gate` ou `discard`.
+13. Traiter la promotion comme provisoire : ouvrir une observation window après `keep`, comparer le drift à la baseline, garder le rollback bundle prêt jusqu'à la fermeture de la fenêtre.
+14. Si l'observation, le drift, les protected regressions ou la vérification du commit promu échouent, `rollback` vers la dernière baseline et prouver la récupération avec une preuve fraîche.
+15. Toute preuve manquante, host evidence absente, conflit d'identité author/reviewer, artefact gelé modifié, run interrompu sans preuve de resume, ou exposition du hidden-oracle donne `fail-closed`.
 
-## Sortie / Output
+Voir [evolve-details.md](references/evolve-details.md) pour les cohortes, l'indépendance, les verdicts, l'anti-reward-hacking, l'observation/drift/rollback, le resume et l'evidence host complets.
 
-```yaml
-evolve:
-  hypothesis: ""
-  baseline_commit: ""
-  baseline_snapshot:
-    behavior_contract_hash: ""
-    rollback_bundle: ""
-    frozen_at: ""
-  author_id: ""
-  reviewer_id: ""
-  second_reviewer_id: ""
-  independence:
-    author_reviewer_distinct: true
-    reviewers_distinct: true
-    reviewer_briefs_hash: ""
-  candidate:
-    branch: ""
-    worktree: ""
-    write_scope: []
-  evaluator:
-    path: ""
-    hash: ""
-    outside_candidate_write_scope: true
-    thresholds_hash: ""
-    prompts_hash: ""
-  cohorts:
-    train: {visible_to_author: true, cases: []}
-    held_out_eval: {visible_to_author: false, cases: []}
-    hidden_oracle: {visible_to_author: false, cases: []}
-    protected_regressions: {visible_to_author: false, cases: []}
-  forward_tests:
-    clean_room: true
-    outside_candidate_write_scope: true
-    cases: []
-  host_evidence:
-    required: true
-    agent_ids: []
-    tool_calls: []
-    worktrees: []
-    artifacts: []
-    transcripts: []
-    execution_status: observed | partial | blocked | failed
-  resume:
-    interruption_safe: true
-    checkpoint: ""
-    resumed_from_checkpoint: false
-    full_rerun_after_resume: false
-  raw_results:
-    train: []
-    held_out_eval: []
-    hidden_oracle: []
-    protected_regressions: []
-    forward_tests: []
-  independent_reviews: []
-  anti_reward_hacking:
-    frozen_artifacts_unchanged: true
-    no_oracle_access: true
-    no_selective_reruns: true
-    no_proxy_optimization: true
-    no_reviewer_collusion: true
-  deltas:
-    correctness: ""
-    quality: ""
-    cost: ""
-    latency: ""
-    interruptions: ""
-  promotion_observation_window:
-    required_after_keep: true
-    duration_or_runs: ""
-    fresh_runs: []
-    drift_detected: false
-    protected_gates_passed: false
-  rollback: {bundle: "", trigger: "", recovery_evidence: []}
-  fail_closed_reason: ""
-  verdict: keep | discard | rollback | human-gate | insufficient-evidence | fail-closed
-```
+## Sortie
 
-A candidate cannot broaden its own authority policy and must not touch evaluators, reviewers, forward-tests, fixtures or promotion criteria.
+Le skill rend un bloc `evolve` documenté dans [evolve-output.md](references/evolve-output.md) : `hypothesis`, `baseline_commit`, `baseline_snapshot`, `author_id`, `reviewer_id`, `second_reviewer_id`, `independence`, `candidate`, `evaluator`, `cohorts`, `forward_tests`, `host_evidence`, `resume`, `raw_results`, `independent_reviews`, `anti_reward_hacking`, `deltas`, `promotion_observation_window`, `rollback`, `fail_closed_reason`, `verdict`.
+
+## Arrêt et interdits
+
+- Une candidate cannot broaden its own authority policy and must not touch evaluators, reviewers, forward-tests, fixtures or promotion criteria.
+- Fail closed si l'auteur et un reviewer sont identiques, ou si l'evaluator/oracle est modifié après le freeze.
+- Reward hacking (edits gelés, skip, selective reruns, proxy optimisation) donne toujours `discard`.
+- Keep reste provisoire jusqu'à la fin de l'observation window sans drift ni régression.
+- Ne jamais activer ce skill automatiquement pendant un projet utilisateur.
+
+Répondre dans la langue de l'utilisateur. Commandes, chemins, identifiants, gates et verdicts restent identiques en français et en anglais.
