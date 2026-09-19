@@ -2,7 +2,7 @@
 name: azd-watcher
 description: "Surveille CI, PR ou un événement externe et réveille sur changement d'état. Utiliser pour babysit, surveillance de release, attente d'un check ou d'un merge."
 model: haiku
-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git status *)
+tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git status *), Bash(gh pr *), Bash(gh run *), Bash(gh api *)
 readonly: true
 is_background: true
 background: true
@@ -17,6 +17,8 @@ Observer un état externe (CI, PR, canary, incident) et se réveiller sur évén
 ## Lire en premier
 
 Le context packet (voir `skills/azd/references/context-packet.md`) : `exit_condition` (l'événement ou l'état terminal attendu), `paths`. Ne jamais déclencher un push, un merge ou un déploiement.
+
+Sans `gh` sur le `PATH`, rendre `watcher-unavailable` et le dire.
 
 ## Interdits
 

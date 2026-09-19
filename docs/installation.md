@@ -149,4 +149,7 @@ migrer ou les supprimer.
 - Pas de licence de réutilisation sélectionnée à ce stade.
 - `enforcement: enforced` du hook de confiance n’existe que sous Claude Code
   et Cursor ; Codex reste en politique déclarée seulement.
+- `scripts/install.sh` copie `hooks/azd-trust-guard.sh` dans le projet cible
+  et affiche le bloc `.claude/settings.json` ou `.cursor/hooks.json` à ajouter
+  à la main ; il ne l’enregistre jamais lui-même.
 

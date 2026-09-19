@@ -2,11 +2,13 @@ import json
 import re
 import stat
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+WITNESS_TEXT = "temoin-projet-hote: ne pas toucher.\n"
 
 
 def _load_json(path: Path) -> dict:
@@ -78,9 +80,6 @@ class InstallScriptTests(unittest.TestCase):
     def test_uses_strict_mode(self) -> None:
         self.assertIn("set -euo pipefail", self.text)
 
-    def test_never_force_removes(self) -> None:
-        self.assertNotIn("rm -rf", self.text)
-
     def test_passes_bash_syntax_check(self) -> None:
         result = subprocess.run(
             ["bash", "-n", str(self.script)],
@@ -88,6 +87,94 @@ class InstallScriptTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(0, result.returncode, result.stderr)
+
+    def _run_install(self, host: str, target: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["bash", str(self.script), host, str(target)],
+            capture_output=True,
+            text=True,
+        )
+
+    def _seed_target(self, target: Path) -> None:
+        # Witness file: install.sh must never touch project files outside its
+        # own skill/agent/hook directories.
+        (target / "README.md").write_text(WITNESS_TEXT, encoding="utf-8")
+        # Foreign skill: install.sh must never touch a skill it did not put
+        # there itself.
+        foreign_skill = target / ".claude/skills/autre-skill"
+        foreign_skill.mkdir(parents=True)
+        (foreign_skill / "SKILL.md").write_text(
+            "---\nname: autre-skill\n---\n# Etranger, ne pas toucher\n",
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _tree_listing(target: Path) -> list[str]:
+        return sorted(
+            str(p.relative_to(target)) for p in target.rglob("*") if p.is_file()
+        )
+
+    def test_install_is_idempotent_and_non_destructive_for_claude(self) -> None:
+        # Behavioral replacement for a former test that only grepped the
+        # script text for "rm -rf": this actually installs twice into a
+        # fresh project and checks nothing outside AZDone's own paths moves.
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp)
+            self._seed_target(target)
+
+            first = self._run_install("claude", target)
+            self.assertEqual(0, first.returncode, first.stderr)
+            listing_after_first = self._tree_listing(target)
+
+            second = self._run_install("claude", target)
+            self.assertEqual(0, second.returncode, second.stderr)
+            listing_after_second = self._tree_listing(target)
+
+            self.assertEqual(
+                WITNESS_TEXT, (target / "README.md").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                "---\nname: autre-skill\n---\n# Etranger, ne pas toucher\n",
+                (target / ".claude/skills/autre-skill/SKILL.md").read_text(
+                    encoding="utf-8"
+                ),
+            )
+
+            skill_dirs = [p for p in (target / ".claude/skills").iterdir() if p.is_dir()]
+            azdone_skill_dirs = [p for p in skill_dirs if p.name != "autre-skill"]
+            self.assertEqual(18, len(azdone_skill_dirs))
+
+            agent_files = list((target / ".claude/agents").glob("*.md"))
+            self.assertEqual(5, len(agent_files))
+
+            self.assertTrue((target / ".claude/hooks/azdone/azd-trust-guard.sh").is_file())
+
+            self.assertEqual(listing_after_first, listing_after_second)
+
+    def test_install_is_idempotent_and_non_destructive_for_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp)
+            self._seed_target(target)
+
+            first = self._run_install("codex", target)
+            self.assertEqual(0, first.returncode, first.stderr)
+            listing_after_first = self._tree_listing(target)
+
+            second = self._run_install("codex", target)
+            self.assertEqual(0, second.returncode, second.stderr)
+            listing_after_second = self._tree_listing(target)
+
+            self.assertEqual(
+                WITNESS_TEXT, (target / "README.md").read_text(encoding="utf-8")
+            )
+            self.assertTrue((target / ".claude/skills/autre-skill/SKILL.md").is_file())
+
+            skill_dirs = [p for p in (target / ".agents/skills").iterdir() if p.is_dir()]
+            self.assertEqual(18, len(skill_dirs))
+
+            self.assertFalse((target / ".agents/agents").exists())
+
+            self.assertEqual(listing_after_first, listing_after_second)
 
 
 class GuideTests(unittest.TestCase):

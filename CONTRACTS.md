@@ -268,8 +268,8 @@ The agent may write exactly one field in `trust.yaml` by itself: `autonomy:`,
 and only as an earned-trust promotion after five consecutive `verified` runs
 without rollback, up to the configured `ceiling`. That write is logged in
 `.azdone/trust-ledger.md` in the same turn. Every other field in
-`trust.yaml` — `actions:`, `always_pause:`, `protected_paths:`,
-`enforcement:`, `models:` — changes only through an explicit human edit or an
+`trust.yaml` (`actions:`, `always_pause:`, `protected_paths:`,
+`enforcement:`, `models:`) changes only through an explicit human edit or an
 explicit human answer during `/azd-setup`.
 
 ## Interruption and resumption

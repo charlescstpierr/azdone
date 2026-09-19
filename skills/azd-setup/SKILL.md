@@ -28,10 +28,10 @@ Avant la première exécution de `/azd` sans politique déclarée, ou pour chang
 3. Si aucun setup AZDone n'existe (aucun fichier de contrôle, aucun `.azdone/`), appeler `$initialiser-projet-azd` avant de continuer.
 4. Poser une seule question sur le niveau d'autonomie: recommandation `autonomous`, alternative `assisted`, statu quo le niveau déjà en place ou `guided`. Montrer le tableau des quatre niveaux (référence: [trust.example.yaml](references/trust.example.yaml)).
 5. Poser une seule question sur le budget de modèles: `small | medium | large | unlimited`.
-6. Chercher `codex`, `claude`, `cursor-agent` sur le PATH. Pour chaque CLI trouvée, exécuter `<cli> --help` et confirmer les drapeaux réels avant d'écrire une commande d'adaptateur. Ne jamais écrire une commande d'adaptateur non confirmée par `--help`; à défaut, laisser l'adaptateur absent et le signaler dans la réponse.
+6. Chercher `codex`, `claude`, `agent` (CLI Cursor ; `cursor-agent` en repli) sur le PATH. Pour chaque CLI trouvée, exécuter `<cli> --help` et confirmer les drapeaux réels avant d'écrire une commande d'adaptateur. Ne jamais écrire une commande d'adaptateur non confirmée par `--help`; à défaut, laisser l'adaptateur absent et le signaler dans la réponse.
 7. Construire le fichier complet à partir du gabarit [trust.example.yaml](references/trust.example.yaml), avec les choix de l'humain et les seuls adaptateurs confirmés.
 8. Montrer le fichier complet avant toute écriture. Écrire `.azdone/trust.yaml`, puis amorcer `.azdone/trust-ledger.md` avec l'en-tête de [trust-ledger.example.md](references/trust-ledger.example.md) (en-tête seul, sans les lignes d'exemple).
-9. Sur Claude Code ou Cursor, proposer `enforcement: enforced` et expliquer le hook `hooks/azd-trust-guard.sh`: il bloque push/merge/deploy interdits, ne bloque jamais en silence, et la liste toujours-pause reste non contournable.
+9. Sur Claude Code ou Cursor, vérifier qu'un hook est réellement enregistré (plugin installé, ou `.claude/settings.json` / `.cursor/hooks.json` référençant `azd-trust-guard.sh`). Si oui, proposer `enforcement: enforced` et expliquer le hook `hooks/azd-trust-guard.sh`: il bloque push/merge/deploy interdits, ne bloque jamais en silence, et la liste toujours-pause reste non contournable. Sinon, écrire `enforcement: declared`, expliquer comment enregistrer le hook (bloc affiché par `scripts/install.sh`) et le dire explicitement dans la réponse.
 10. Sur Claude Code, si l'humain accepte, ajouter une ligne pointeur dans le fichier de contrôle existant (`CLAUDE.md` ou `AGENTS.md`): « Toute tâche non triviale passe par /azd (voir .azdone/trust.yaml) ». Ne jamais créer de second fichier de contrôle.
 11. Rendre le bloc de sortie et le verdict.
 
@@ -54,3 +54,4 @@ azd_setup:
 - Ne jamais élargir `actions.*` au-delà de ce que l'humain a approuvé; `never` et `always_pause` restent non modifiables par ce skill.
 - Ne jamais écraser un `trust.yaml` existant sans montrer le contenu et obtenir un accord.
 - Ne jamais installer de dépendance ni activer un hook sans le dire explicitement.
+- Ne jamais écrire `enforcement: enforced` sans preuve qu'un hook est enregistré.

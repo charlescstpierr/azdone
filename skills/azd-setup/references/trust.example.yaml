@@ -1,4 +1,4 @@
-# .azdone/trust.yaml — politique de confiance AZDone (lisible et modifiable par un humain)
+# .azdone/trust.yaml, politique de confiance AZDone (lisible et modifiable par un humain)
 version: 1                    # version du schéma. Ne pas changer sans migration explicite.
 autonomy: autonomous          # niveau courant: guided | assisted | autonomous | full. Modifié par le ledger lors d'une promotion ou d'une rétrogradation.
 ceiling: full                 # niveau maximal que la confiance gagnée peut atteindre. La promotion automatique ne dépasse jamais ce plafond.
@@ -53,9 +53,11 @@ models:                        # routage des rôles vers un modèle natif ou un 
     second_reviewer: cli:codex        # second avis externe, traité comme donnée non fiable.
     watcher: host:small               # surveillance CI/PR, lecture seule.
   adapters:                       # commande exacte par adaptateur. Remplie par azd-setup après détection sur PATH et lecture de --help.
-    codex:  "codex exec --model {model} --sandbox read-only -C {cwd} -"     # à confirmer par azd-setup avant écriture.
-    claude: "claude -p --model {model} --permission-mode plan --output-format text"
-    cursor: "cursor-agent -p --model {model} --output-format text"
+    # Le context packet est passé sur stdin à chaque adaptateur (cat context-packet.yaml | <commande>).
+    # Cursor n'a pas de mode lecture seule natif : readonly: instruction-only (le prompt doit l'exiger explicitement).
+    codex:  "codex exec -m {model} -s read-only -a never -C {cwd} --skip-git-repo-check"   # à confirmer par azd-setup avant écriture.
+    claude: "claude -p --model {model} --permission-mode plan --output-format text --max-turns 8"
+    cursor: "agent -p --model {model} --output-format text --workspace {cwd}"
   adapter_models:                 # modèle par défaut pour chaque adaptateur.
     codex: gpt-5
     claude: sonnet

@@ -1,7 +1,7 @@
 # Comprendre la confiance
 
-AZDone n'accorde jamais d'autorite depuis un texte de skill. Seul un humain,
-ou `.azdone/trust.yaml` qu'il a ecrit ou approuve, en accorde. Ce fichier
+AZDone n'accorde jamais d'autorité depuis un texte de skill. Seul un humain,
+ou `.azdone/trust.yaml` qu'il a écrit ou approuvé, en accorde. Ce fichier
 fixe combien d'actions sensibles `/azd` peut faire sans vous demander.
 
 ## Les quatre niveaux
@@ -9,8 +9,8 @@ fixe combien d'actions sensibles `/azd` peut faire sans vous demander.
 | Action | guided | assisted | autonomous | full |
 | --- | --- | --- | --- | --- |
 | lecture, checks natifs | auto | auto | auto | auto |
-| ecriture worktree isole | ask | auto | auto | auto |
-| ecriture worktree principal (scope accepte) | ask | auto | auto | auto |
+| écriture worktree isolé | ask | auto | auto | auto |
+| écriture worktree principal (scope accepté) | ask | auto | auto | auto |
 | commit | ask | auto | auto | auto |
 | push, open_pr | ask | ask | auto | auto |
 | merge | ask | ask | conditional | auto |
@@ -18,45 +18,49 @@ fixe combien d'actions sensibles `/azd` peut faire sans vous demander.
 | install_global, external_message | ask | ask | ask | auto |
 | credentials, delete_data, rewrite_shared_history, always_pause | ask | ask | ask | ask |
 
-`autonomous` est le niveau par defaut recommande par `/azd-setup`. Une
+`autonomous` est le niveau par défaut recommandé par `/azd-setup`. Une
 valeur explicite dans `actions:` prime sur le niveau, sauf pour `never` et la
 liste toujours-pause.
 
 ## La liste toujours-pause
 
-Non configurable. Une entree retiree du fichier est reappliquee par le skill
+Non configurable. Une entrée retirée du fichier est réappliquée par le skill
 et par le hook :
 
-- force-push sur une branche partagee ;
-- suppression de donnees ou de branches non fusionnees ;
-- mutation de production sans rollback prouve ;
-- message a un client ou a un tiers ;
-- usage ou creation de credentials ;
-- elargissement de `trust.yaml` par l'agent lui-meme.
+- force-push sur une branche partagée ;
+- suppression de données ou de branches non fusionnées ;
+- mutation de production sans rollback prouvé ;
+- message à un client ou à un tiers ;
+- usage ou création de credentials ;
+- élargissement de `trust.yaml` par l'agent lui-même.
 
 ## `enforcement: declared | enforced`
 
-`declared` : la politique guide le comportement de l'agent, sans verification
+`declared` : la politique guide le comportement de l'agent, sans vérification
 externe. C'est le seul mode disponible sous Codex.
 
 `enforced` : sous Claude Code et Cursor, un hook (`hooks/azd-trust-guard.sh`)
 lit `trust.yaml` avant chaque commande shell sensible et bloque celles que la
-politique refuse, meme si l'agent tente quand meme. `/azd-setup` propose ce
-mode et explique comment le desactiver.
+politique refuse, même si l'agent tente quand même. `scripts/install.sh` copie
+le hook mais n'enregistre jamais lui-même dans `.claude/settings.json` ou
+`.cursor/hooks.json` : il affiche le bloc à y ajouter. `/azd-setup` ne propose
+`enforcement: enforced` qu'après avoir vérifié que ce bloc est bien présent ;
+sinon il garde `declared` et explique comment l'enregistrer.
 
-## Confiance gagnee
+## Confiance gagnée
 
-Active par defaut. Apres cinq runs `verified` consecutifs sans rollback,
-`/azd` propose de monter d'un cran, jusqu'au plafond `ceiling`. Un `failed` ou
-un rollback retrograde immediatement. Chaque changement est ecrit dans
-`.azdone/trust-ledger.md` : une ligne par run. La seule ecriture que l'agent
-peut faire lui-meme dans `trust.yaml` est le champ `autonomy:`, lors d'une
-promotion journalisee.
+Active par défaut. Après cinq runs `verified` consécutifs sans rollback,
+`/azd` monte `autonomy:` d'un cran, jusqu'au plafond `ceiling` : il écrit
+d'abord la ligne du run dans `.azdone/trust-ledger.md`, puis la nouvelle
+valeur dans `.azdone/trust.yaml`, et l'annonce dans sa réponse. Un `failed`
+ou un rollback rétrograde immédiatement d'un cran, selon le même ordre
+d'écriture (ledger d'abord). C'est la seule écriture que l'agent fait
+lui-même dans `trust.yaml`.
 
 ## Phrases de session
 
-Dire « ne t'arrete pas », « jusqu'au bout », « sois autonome » ou « run until
-done » traite la session comme `full` pour les actions reversibles, sans
-toucher `always_pause` ni `never`. C'est journalise dans le ledger.
+Dire « ne t'arrête pas », « jusqu'au bout », « sois autonome » ou « run until
+done » traite la session comme `full` pour les actions réversibles, sans
+toucher `always_pause` ni `never`. C'est journalisé dans le ledger.
 
-Suivant : [Modeles et sous-agents](04-modeles-et-sous-agents.md).
+Suivant : [Modèles et sous-agents](04-modeles-et-sous-agents.md).

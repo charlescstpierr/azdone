@@ -103,3 +103,43 @@ if [ "$host" = "claude" ]; then
   echo "  claude plugin install azdone@azdone"
   echo "Cette voie namespace les commandes : /azdone:azd, /azdone:azd-setup."
 fi
+
+# Copie du hook de confiance (jamais requis, jamais enregistre automatiquement :
+# modifier settings.json / hooks.json exige l'accord explicite de l'humain).
+if [ "$host" = "claude" ] || [ "$host" = "cursor" ]; then
+  if [ "$host" = "claude" ]; then
+    hook_dir="${target}/.claude/hooks/azdone"
+  else
+    hook_dir="${target}/.cursor/hooks/azdone"
+  fi
+
+  if [ -f "${repo_root}/hooks/azd-trust-guard.sh" ]; then
+    mkdir -p "${hook_dir}"
+    cp "${repo_root}/hooks/azd-trust-guard.sh" "${hook_dir}/azd-trust-guard.sh"
+    chmod +x "${hook_dir}/azd-trust-guard.sh"
+    if [ -f "${repo_root}/hooks/azd-trust-guard.py" ]; then
+      cp "${repo_root}/hooks/azd-trust-guard.py" "${hook_dir}/azd-trust-guard.py"
+      chmod +x "${hook_dir}/azd-trust-guard.py"
+    fi
+    echo ""
+    echo "Hook de confiance copie (non enregistre) -> ${hook_dir}/azd-trust-guard.sh"
+  fi
+
+  if [ "$host" = "claude" ]; then
+    echo ""
+    echo "Pour l'enregistrer, ajoutez ce bloc a ${target}/.claude/settings.json (fusionner, ne pas ecraser) :"
+    echo '  {"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/azdone/azd-trust-guard.sh\""}]}]}}'
+    echo "Ce script ne modifie jamais settings.json lui-meme."
+  else
+    echo ""
+    echo "Pour l'enregistrer, ajoutez ce bloc a ${target}/.cursor/hooks.json (fusionner, ne pas ecraser) :"
+    echo '  {"version":1,"hooks":{"beforeShellExecution":[{"command":"bash \"./.cursor/hooks/azdone/azd-trust-guard.sh\""}]}}'
+    echo "Chemin relatif utilise volontairement : VERIFIED_FORMATS.md ne confirme pas la variable CURSOR_PROJECT_DIR pour un hooks.json de projet (hors plugin)."
+    echo "Ce script ne modifie jamais hooks.json lui-meme."
+  fi
+fi
+
+if [ "$host" = "codex" ]; then
+  echo ""
+  echo "Codex : aucun mode enforced. La confiance y reste 'declared' seulement, aucun hook ne s'y execute."
+fi

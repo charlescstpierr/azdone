@@ -8,7 +8,7 @@ Toutes les modifications notables du package public sont documentées ici.
 - Pilot 0 humain à exécuter sur un dépôt frais.
 - Compatibilité comportementale Claude Code à vérifier.
 
-## 0.2.0-preview — 2026-09-19
+## 0.2.0-preview (2026-09-19)
 
 - Couche d'entrée `/azd` et `/azd-setup` par-dessus les 16 skills existants,
   avec huit playbooks et cinq rôles de sous-agents (`azd-scout`,

@@ -31,6 +31,24 @@ AGENT_ROLE_WORDS = ["azd-scout", "azd-builder", "azd-verifier", "azd-reviewer", 
 
 EM_DASH = "—"
 
+# Style rule (no em dash) extended to every path this work touched. hooks/azd-trust-guard.sh
+# and hooks/azd-trust-guard.py are excluded: they are owned by a parallel, in-flight
+# workstream rewriting the hook (same reason tests/test_trust_policy.py is allowed to be
+# red in the meantime); they are not edited here.
+EM_DASH_SCAN_ROOTS = [
+    AZD_SKILL,
+    ROOT / "skills" / "azd-setup",
+    AGENTS_DIR,
+    ROOT / "hooks",
+    ROOT / "scripts",
+    ROOT / "docs" / "guide",
+]
+EM_DASH_EXCLUDED_FILES = {
+    ROOT / "hooks" / "azd-trust-guard.sh",
+    ROOT / "hooks" / "azd-trust-guard.py",
+}
+CHANGELOG_PATH = ROOT / "CHANGELOG.md"
+
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -136,11 +154,28 @@ class EntryModeSkillTests(unittest.TestCase):
 
     def test_no_em_dash_anywhere_in_azd_entry_mode_files(self) -> None:
         failures = []
-        for path in list(AZD_SKILL.rglob("*")) + list(AGENTS_DIR.rglob("*")):
-            if not path.is_file():
-                continue
-            if EM_DASH in read_text(path):
-                failures.append(str(path.relative_to(ROOT)))
+        seen: set[Path] = set()
+        for root in EM_DASH_SCAN_ROOTS:
+            for path in root.rglob("*"):
+                if not path.is_file() or path in seen or path in EM_DASH_EXCLUDED_FILES:
+                    continue
+                if "__pycache__" in path.parts:
+                    continue
+                seen.add(path)
+                try:
+                    text = read_text(path)
+                except UnicodeDecodeError:
+                    continue  # binary file, not source text
+                if EM_DASH in text:
+                    failures.append(str(path.relative_to(ROOT)))
+
+        if CHANGELOG_PATH.is_file():
+            for lineno, line in enumerate(read_text(CHANGELOG_PATH).splitlines(), start=1):
+                if "0.1.0-preview" in line:
+                    continue
+                if EM_DASH in line:
+                    failures.append(f"CHANGELOG.md:{lineno}")
+
         self.assertEqual([], failures)
 
 

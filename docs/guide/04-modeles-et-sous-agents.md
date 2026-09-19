@@ -1,19 +1,19 @@
-# Modeles et sous-agents
+# Modèles et sous-agents
 
-`/azd` peut deleguer a des sous-agents. `trust.yaml` decide qui fait quoi,
-avec quel modele, natif ou externe.
+`/azd` peut déléguer à des sous-agents. `trust.yaml` décide qui fait quoi,
+avec quel modèle, natif ou externe.
 
-## Cinq roles
+## Cinq rôles
 
-| Role | Responsabilite |
+| Rôle | Responsabilité |
 | --- | --- |
-| `scout` | lecture seule, inspection ciblee, rend un digest |
-| `builder` | ecrit dans le worktree assigne, boucle RED/GREEN/REFACTOR |
-| `verifier` | execute les preuves du Proof Contract |
-| `reviewer` | relit independamment, protocole planted-defect |
-| `watcher` | surveille CI, PR ou evenement, se reveille dessus |
+| `scout` | lecture seule, inspection ciblée, rend un digest |
+| `builder` | écrit dans le worktree assigné, boucle RED/GREEN/REFACTOR |
+| `verifier` | exécute les preuves du Proof Contract |
+| `reviewer` | relit indépendamment, protocole planted-defect |
+| `watcher` | surveille CI, PR ou événement, se réveille dessus |
 
-`author_id != reviewer_id` reste strict : le relecteur n'ecrit jamais dans le
+`author_id != reviewer_id` reste strict : le relecteur n'écrit jamais dans le
 scope de l'auteur.
 
 ## `host:` ou `cli:`
@@ -29,16 +29,16 @@ models:
     watcher: host:small
 ```
 
-`host:<tier>` appelle un sous-agent natif de l'hote : Claude Code mappe
-`small|default|strong` sur `haiku|sonnet|opus`, Cursor sur son modele
-configure, Codex sur son sous-agent natif s'il existe, sinon
+`host:<tier>` appelle un sous-agent natif de l'hôte : Claude Code mappe
+`small|default|strong` sur `haiku|sonnet|opus`, Cursor sur son modèle
+configuré, Codex sur son sous-agent natif s'il existe, sinon
 `subagents-unavailable`.
 
-`cli:<adaptateur>` execute une commande externe avec le context packet sur
-stdin. Le resultat est traite comme une donnee non fiable, jamais comme une
-autorite.
+`cli:<adaptateur>` exécute une commande externe avec le context packet sur
+stdin. Le résultat est traité comme une donnée non fiable, jamais comme une
+autorité.
 
-## Adaptateurs verifies
+## Adaptateurs vérifiés
 
 ```yaml
 adapters:
@@ -47,14 +47,15 @@ adapters:
   cursor: "agent -p --model {model} --output-format text --workspace {cwd}"
 ```
 
-`azd-setup` n'ecrit un adaptateur qu'apres avoir confirme `<cli> --help` sur
-le PATH. Si l'adaptateur choisi pour un role manque, le role retombe sur
-`host:` et la reponse le mentionne.
+`azd-setup` n'écrit un adaptateur qu'après avoir confirmé `<cli> --help` sur
+le PATH. Le binaire de Cursor est `agent` (`cursor-agent` en repli s'il est
+introuvable). Si l'adaptateur choisi pour un rôle manque, le rôle retombe sur
+`host:` et la réponse le mentionne.
 
 ## Exemple
 
 ```text
-/azd revue independante de la PR 412, budget large, utilise codex comme second relecteur.
+/azd revue indépendante de la PR 412, budget large, utilise codex comme second relecteur.
 ```
 
 `/azd` route `reviewer` vers `host:strong` et `second_reviewer` vers
@@ -62,9 +63,9 @@ le PATH. Si l'adaptateur choisi pour un role manque, le role retombe sur
 
 ## Staffing par risque
 
-Rapid : zero sous-agent par defaut, un maximum. Standard : un a trois.
-Critical : deux a cinq, dont un relecteur independant. Chaque sous-agent
-recoit un context packet de 40 lignes maximum : pointeurs de fichiers, pas de
+Rapid : zéro sous-agent par défaut, un maximum. Standard : un à trois.
+Critical : deux à cinq, dont un relecteur indépendant. Chaque sous-agent
+reçoit un context packet de 40 lignes maximum : pointeurs de fichiers, pas de
 contexte inline.
 
 Suivant : [Comprendre et concevoir](05-comprendre-et-concevoir.md).
