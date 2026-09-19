@@ -1,0 +1,62 @@
+# .azdone/trust.yaml — politique de confiance AZDone (lisible et modifiable par un humain)
+version: 1                    # version du schéma. Ne pas changer sans migration explicite.
+autonomy: autonomous          # niveau courant: guided | assisted | autonomous | full. Modifié par le ledger lors d'une promotion ou d'une rétrogradation.
+ceiling: full                 # niveau maximal que la confiance gagnée peut atteindre. La promotion automatique ne dépasse jamais ce plafond.
+enforcement: declared         # declared | enforced. declared = politique affichée sans hook actif. enforced = hooks actifs sur Claude Code / Cursor.
+
+actions:                      # une valeur par action, parmi auto | conditional | ask | never. Prime sur le niveau, sauf never et always_pause.
+  commit: auto                  # créer un commit local.
+  push: auto                    # pousser vers le remote.
+  open_pr: auto                 # ouvrir une pull request.
+  merge: conditional            # fusionner: auto seulement si toutes les conditions ci-dessous passent, sinon ask.
+  deploy: ask                   # déclencher un déploiement.
+  install_global: ask           # installer une dépendance globale ou changer la configuration machine.
+  credentials: never            # créer ou utiliser des identifiants. Toujours-pause, jamais auto.
+  external_message: ask         # envoyer un message à un client ou à un tiers.
+  delete_data: never            # supprimer des données ou des branches non fusionnées. Toujours-pause.
+  rewrite_shared_history: never # réécrire l'historique Git partagé. Toujours-pause.
+
+conditions:                   # conditions requises pour qu'une action `conditional` devienne automatique.
+  require_green_ci: true        # la CI doit être verte sur le commit courant.
+  require_independent_review: true # une revue indépendante (reviewer_id différent de author_id) doit avoir accepté.
+  risk_ceiling: standard         # rapid | standard | critical. Au-dessus de ce plafond, l'action repasse en ask.
+  max_files_changed: 40          # nombre maximal de fichiers modifiés pour rester automatique.
+  max_lanes: 3                   # nombre maximal de lanes parallèles avant de repasser en ask.
+  budget_tokens: 2000000         # 0 = illimité. Le pilote s'arrête en partial quand ce budget est dépassé.
+
+protected_paths:               # toute écriture ici force ask, quel que soit le niveau ou les actions ci-dessus.
+  - .azdone/trust.yaml            # cette politique elle-même.
+  - .github/workflows/            # les workflows CI/CD.
+  - infra/                        # le code d'infrastructure.
+
+always_pause:                  # liste toujours-pause. Non configurable: une entrée retirée est réappliquée par le skill et par le hook.
+  - force-push sur branche partagée
+  - suppression de données ou de branches non fusionnées
+  - mutation de production sans rollback prouvé
+  - message à un client ou à un tiers
+  - usage ou création de credentials
+  - élargissement de trust.yaml par l'agent lui-même
+
+earn:                          # confiance gagnée: promotion et rétrogradation automatiques.
+  enabled: true                  # active la promotion et la rétrogradation automatiques.
+  promote_after: 5                # nombre de runs verified consécutifs sans rollback avant de monter d'un cran.
+  demote_on: [failed, rollback]    # tout failed ou rollback rétrograde immédiatement d'un cran.
+  ledger: .azdone/trust-ledger.md  # journal des runs qui sert de preuve à la promotion et à la rétrogradation.
+
+models:                        # routage des rôles vers un modèle natif ou un adaptateur CLI externe.
+  budget: medium                  # small | medium | large | unlimited. Effort de raisonnement visé pour les rôles.
+  roles:                          # host:<tier> = sous-agent natif de l'hôte. cli:<adaptateur> = appel externe via un adaptateur.
+    scout: host:small                # inspection ciblée, lecture seule.
+    builder: host:default            # écriture bornée au write_scope.
+    verifier: host:default           # exécution des preuves.
+    reviewer: host:strong             # relecture indépendante.
+    second_reviewer: cli:codex        # second avis externe, traité comme donnée non fiable.
+    watcher: host:small               # surveillance CI/PR, lecture seule.
+  adapters:                       # commande exacte par adaptateur. Remplie par azd-setup après détection sur PATH et lecture de --help.
+    codex:  "codex exec --model {model} --sandbox read-only -C {cwd} -"     # à confirmer par azd-setup avant écriture.
+    claude: "claude -p --model {model} --permission-mode plan --output-format text"
+    cursor: "cursor-agent -p --model {model} --output-format text"
+  adapter_models:                 # modèle par défaut pour chaque adaptateur.
+    codex: gpt-5
+    claude: sonnet
+    cursor: auto

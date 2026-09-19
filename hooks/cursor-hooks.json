@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/azd-trust-guard.sh\""
+      }
+    ]
+  }
+}
