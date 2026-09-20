@@ -10,7 +10,7 @@ reminder: "Nouvelle tâche ? Playbook correspondant ou rigueur nécessaire -> ap
 
 # azd · Point d'entrée AZDone
 
-`/azd` route une demande vers les 18 skills `$...-azd` existants. Elle ne réécrit aucun de leurs contrats.
+`/azd` route une demande vers les 18 skills `$...-azd` existants. Elle ne réécrit aucun de leurs contrats. Le vocabulaire est défini dans docs/glossaire.md.
 
 ## Quick start
 

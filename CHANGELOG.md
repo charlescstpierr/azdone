@@ -64,6 +64,7 @@ Toutes les modifications notables du package public sont documentées ici.
   non commité avant tout plan ; un chevauchement direct rend `blocked`.
 - `docs/parcours.md` : le parcours AZDone en cinq temps sur une page, avec
   une section à copier en `PARCOURS.md` repo-local.
+- Glossaire des concepts et définition au premier usage dans les skills.
 
 ## 0.1.0-preview — 2026-07-26
 

@@ -27,7 +27,8 @@ Ce que vous allez apprendre :
 
 Lisez les pages dans l'ordre la première fois. Ensuite, chacune se suffit à
 elle-même. [Le parcours AZDone en une page](../parcours.md) résume les cinq
-temps sans repasser par ce guide.
+temps sans repasser par ce guide. Le [glossaire des concepts](../glossaire.md)
+définit chaque terme propre à AZDone rencontré en chemin.
 
 ## Si vous ne retenez qu'une chose
 

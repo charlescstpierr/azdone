@@ -7,7 +7,7 @@ description: "Planifier le travail en convertissant un résultat approuvé en ca
 
 Transformer le résultat accepté en ordre exécutable et vérifiable.
 
-Wayfinder est domain-agnostic: ne jamais faire de CLI/API/SDK la surface par défaut. Appliquer le plan à produit, backend, infra, data, mobile, desktop, web, CLI, librairie, docs, migration et incident.
+Wayfinder (navigation d'un grand projet : destination, brouillard, frontière) est domain-agnostic: ne jamais faire de CLI/API/SDK la surface par défaut. Appliquer le plan à produit, backend, infra, data, mobile, desktop, web, CLI, librairie, docs, migration et incident.
 
 ## Quick start
 
@@ -26,7 +26,7 @@ Artefact attendu: `plan.verdict`, carte active, états et liens du graphe, DAG d
 
 ## Procédure
 
-1. Partir de la Boussole, du Language Pack, de la System Success Map, du contrat de résultat, des ADR et des preuves fraîches, et maintenir le Project Decision Graph (nœuds typés, liens causaux, evidence, confiance, invalidation, impact descendant) sans créer de second graphe concurrent.
+1. Partir de la Boussole (cadrage : utilisateur, problème, succès, limites), du Language Pack (termes utiles à la carte active), de la System Success Map, du contrat de résultat, des ADR et des preuves fraîches, et maintenir le Project Decision Graph (nœuds typés, liens causaux, evidence, confiance, invalidation, impact descendant) sans créer de second graphe concurrent.
 2. Utiliser les cartes progressives `Draft -> Needs Grilling -> Ready -> In Progress -> Review -> Done` (avec `Blocked`, `Needs Revalidation`, `Rejected`, `Superseded`), en grillant chaque carte juste avant sa frontière d'exécution, pas tout le backlog en profondeur.
 3. Faire de toute découverte hors scope une carte `Draft` liée, et exposer pour toute décision matérielle recommandation, meilleure alternative, statu quo et trade-offs.
 4. Pour grand projet, activer Wayfinder: destination, fog, frontier, decision ticket, cartes HITL/AFK, claims, blocking, reprise et tracker configuré par le setup; si le tracker configuré est indisponible, demander l'autorité avant de créer un tracker de secours repo-local. Voir [planning-contract.md](references/planning-contract.md).

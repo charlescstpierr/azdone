@@ -17,7 +17,7 @@ Lire [readiness-contract.md](references/readiness-contract.md) pour le schéma c
 
 ## Utiliser quand
 
-- Au démarrage ou à la reprise d'un projet, ou après création/modification matérielle d'une carte, d'une Boussole, d'un ADR, d'une dépendance, d'un environnement ou d'une autorité.
+- Au démarrage ou à la reprise d'un projet, ou après création/modification matérielle d'une carte, d'une Boussole (cadrage : utilisateur, problème, succès, limites), d'un ADR, d'une dépendance, d'un environnement ou d'une autorité.
 - Avant de promouvoir une carte vers `Ready`, ou avant son exécution si le forecast n'est plus frais.
 - Avant `Done`, pour confirmer que les moyens de preuve attendus existaient et ont réellement été utilisés.
 
@@ -25,7 +25,7 @@ Lire [readiness-contract.md](references/readiness-contract.md) pour le schéma c
 
 1. Lire la Boussole, la carte active, les ADR, le Project Decision Graph et les checkpoints frais.
 2. Inspecter le prochain horizon d'exécution : bootstrap léger (dépôt, surfaces évidentes, outils présents, contraintes, risques structurants), preflight global après la Carte du système de réussite (comptes, API, SDK, programmes, appareils, coûts, certificats, données, délais externes), ou readiness du ticket (dépendances transitives, moyen de preuve verrouillé, outil/accès/données/environnement/oracle avant `Ready`) ; garder un forecast provisoire pour les cartes lointaines.
-3. Inventorier les surfaces et claims à prouver, résoudre les routes de contexte demandées et produire le `Route Pack`.
+3. Inventorier les surfaces et claims à prouver, résoudre les routes de contexte demandées et produire le `Route Pack` (pointeurs de contexte).
 4. Chercher d'abord les scripts, dépendances, skills et outils déjà présents.
 5. Construire la matrice `claim -> preuve -> outil -> environnement -> accès/données -> oracle`, puis tester disponibilité, version, compatibilité et capacité réelle à produire l'artefact attendu.
 6. Remonter chaque dépendance directe et transitive jusqu'à un chemin prêt ou un blocker assigné.

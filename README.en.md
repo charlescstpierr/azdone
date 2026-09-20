@@ -122,6 +122,7 @@ Every skill stays invocable on its own, without going through `/azd`. See the
 ## Documentation
 
 - [The AZDone guide](docs/guide/README.md)
+- [Glossary of concepts](docs/glossaire.md)
 - [The AZDone journey on one page](docs/parcours.md)
 - [Installation and removal](docs/installation.md)
 - [Architecture](docs/architecture.md)

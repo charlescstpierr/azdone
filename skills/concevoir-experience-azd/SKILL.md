@@ -23,7 +23,7 @@ Artefact attendu: `design.verdict: selected | partial | blocked | authority-requ
 
 ## Procédure
 
-1. Lire Boussole, Language Pack, design system existant, captures de la surface réelle et Proof Contract attendu, sans proposer une refonte à partir d'une surface imaginée.
+1. Lire Boussole (cadrage : utilisateur, problème, succès, limites), Language Pack (termes utiles à la carte active), design system existant, captures de la surface réelle et Proof Contract attendu, sans proposer une refonte à partir d'une surface imaginée.
 2. Produire un `spec_review` (`placeholder_scan`, `ambiguity_scan`, `scope_check`, choix `authority-aware`, risques) avant tout prototype, en séparant faits, hypothèses, contraintes et décisions ouvertes.
 3. Réutiliser les composants, tokens et patterns target-native du projet.
 4. Produire le plus petit `professional prototype` qui rend la décision visible; comparer exactement trois directions seulement lorsqu'une décision matérielle touche navigation, densité, IA, checkout, permissions, marque ou architecture d'information (recommandation, alternative, statu quo, trade-offs pour chacune), sinon produire une seule direction.

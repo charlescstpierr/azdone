@@ -43,7 +43,7 @@ Choisir le plus petit parcours qui couvre réellement le besoin:
 
 ## Routing rules
 
-- Vérifier d'abord l'initialisation: si aucune preuve de setup AZDone n'existe, appeler `$initialiser-projet-azd` une seule fois; si le setup existe mais qu'une Boussole, un langage partagé, une System Success Map, un graphe ou un preflight manque ou est périmé, ne jamais relancer l'init, mais créer une carte explicite de migration, de complétion ou de revalidation puis router vers le skill normal concerné et `$verifier-readiness-azd`.
+- Vérifier d'abord l'initialisation: si aucune preuve de setup AZDone n'existe, appeler `$initialiser-projet-azd` une seule fois; si le setup existe mais qu'une Boussole (cadrage : utilisateur, problème, succès, limites), un langage partagé, une System Success Map, un graphe ou un preflight manque ou est périmé, ne jamais relancer l'init, mais créer une carte explicite de migration, de complétion ou de revalidation puis router vers le skill normal concerné et `$verifier-readiness-azd`.
 - Commencer ensuite par `$clarifier-objectif-azd`; ne pas coder à partir d'une interprétation implicite.
 - Classer le run `Rapid | Standard | Critical`. Rapid: aucun arbitrage par défaut et au plus une lane d'aide; Standard: une à trois lanes réellement indépendantes; Critical: deux à cinq lanes pertinentes, verifier indépendant et auteur incapable de s'auto-approuver.
 - Utiliser les états `Draft -> Needs Grilling -> Ready -> In Progress -> Review -> Done`; ajouter `Blocked`, `Needs Revalidation`, `Rejected` ou `Superseded` sans écraser l'historique.
@@ -56,7 +56,7 @@ Choisir le plus petit parcours qui couvre réellement le besoin:
 - Appeler `$concevoir-experience-azd` seulement lorsqu'une UI, CLI/TUI, app, IDE, chat, onboarding, rapport ou notification change une décision humaine observable. Pour une sortie textuelle stable sans décision de design, omettre cette étape et laisser `$prouver-resultat-azd` prouver le contrat.
 - Appeler `$structurer-code-azd` seulement lorsqu'un changement traverse une frontière de module, ajoute de l'état ou une forme de donnée, ou laisse le choix entre plusieurs structures; sinon omettre.
 - Pour CLI/API/SDK, demander à `$planifier-travail-azd` un contrat DevEx exact (commands, flags, stdout, stderr, exit codes, config precedence, idempotency) seulement quand cette surface existe.
-- Pour un grand projet, demander à `$planifier-travail-azd` une destination, une decision map persistée, le fog/frontier, des decision tickets, claims, blocking et reprise avant l'execution plan; utiliser le mode Wayfinder seulement quand une carte de navigation apporte une valeur réelle.
+- Pour un grand projet, demander à `$planifier-travail-azd` une destination, une decision map persistée, le fog/frontier, des decision tickets, claims, blocking et reprise avant l'execution plan; utiliser le mode Wayfinder (navigation d'un grand projet : destination, brouillard, frontière) seulement quand une carte de navigation apporte une valeur réelle.
 - Après `$concevoir-experience-azd`, transmettre la `UI acceptance matrix` sans perte à la planification, construction, preuve et review, en conservant chaque token, selector ou attribut normatif.
 - Après `$inspecter-projet-azd`, transmettre sans perte `discovery.contradictions`, `discovery.blind_spots` et les failure modes sourcés à la planification, construction, preuve et review.
 - Utiliser `$isoler-travail-azd` seulement pour des hypothèses concurrentes, des tranches indépendantes ou une vérification adversariale; sinon rester séquentiel.

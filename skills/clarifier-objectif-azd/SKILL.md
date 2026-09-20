@@ -13,7 +13,7 @@ Rester domain-agnostic: produit, backend, infra, data, mobile, desktop, web, CLI
 $clarifier-objectif-azd "Répare le flux de paiement sans casser les abonnements existants"
 ```
 
-Artefact attendu: Boussole suffisamment fraîche, `risk_level`, `understanding.verdict`, `confidence`, `zero_assumption_gate`, Language Pack minimal et au plus une question matérielle.
+Artefact attendu: Boussole (cadrage : utilisateur, problème, succès, limites) suffisamment fraîche, `risk_level`, `understanding.verdict`, `confidence`, `zero_assumption_gate`, Language Pack (termes utiles à la carte active) minimal et au plus une question matérielle.
 
 Lire [decision-card.md](references/decision-card.md) lorsqu'une décision matérielle exige trois choix comparables.
 

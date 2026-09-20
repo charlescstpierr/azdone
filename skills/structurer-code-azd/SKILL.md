@@ -22,7 +22,7 @@ Artefact attendu: `structure.verdict: decided | question | blocked`, formes de d
 
 ## Procédure
 
-1. Lire le contrat de résultat, le Language Pack, les ADR existants, l'architecture détectée par `$inspecter-projet-azd` et `discovery.active_work.overlap`.
+1. Lire le contrat de résultat, le Language Pack (termes utiles à la carte active), les ADR existants, l'architecture détectée par `$inspecter-projet-azd` et `discovery.active_work.overlap`.
 2. Nommer les formes de données (entités, identités, invariants, cycle de vie) et choisir leur organisation: machine à états plutôt que booléens dispersés, table ou registre plutôt que branches répétées, modèle typé plutôt qu'hypothèses de forme répétées.
 3. Tracer les frontières: où on valide, où on fait confiance aux types, où vit la logique pure, et ce que partagent les acteurs concurrents avant de le sérialiser.
 4. Rendre les états illégaux irreprésentables par les types, et marquer explicitement les opérations idempotentes.

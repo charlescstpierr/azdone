@@ -1,5 +1,7 @@
 # Référence des skills AZDone
 
+Les concepts propres à AZDone cités ci-dessous sont définis dans le [glossaire](glossaire.md).
+
 Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 
 ## Entrée

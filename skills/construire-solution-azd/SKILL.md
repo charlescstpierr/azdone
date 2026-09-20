@@ -21,7 +21,7 @@ Verdict attendu: test `red` capture l'absence du champ, patch minimal, test `gre
 
 ## Procédure
 
-1. Vérifier que la carte est `Ready`, que Proof Contract et Readiness Forecast sont frais, et que Route Pack, Language Pack, ADR et contexte minimal sont résolus, et l'ADR de structure quand `$structurer-code-azd` a tourné, sinon retourner à la première gate manquante.
+1. Vérifier que la carte est `Ready`, que Proof Contract et Readiness Forecast sont frais, et que Route Pack (pointeurs de contexte), Language Pack (termes utiles à la carte active), ADR et contexte minimal sont résolus, et l'ADR de structure quand `$structurer-code-azd` a tourné, sinon retourner à la première gate manquante.
 2. Partir du seam public, pas des internals.
 3. RED : écrire ou modifier d'abord un test qui échoue ; si du code candidat le précède, supprime-le ou isole-le hors candidate scope puis repartir du test rouge, et enregistrer commande, sortie, commit/worktree et raison de l'échec.
 4. GREEN : implémenter uniquement ce qui rend ce test vert.

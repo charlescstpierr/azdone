@@ -62,6 +62,7 @@ CHANGELOG_PATH = ROOT / "CHANGELOG.md"
 EM_DASH_SCAN_FILES = [
     ROOT / "docs" / "parcours.md",
     ROOT / "skills" / "verifier-application-azd" / "references" / "preuve-visuelle.md",
+    ROOT / "docs" / "glossaire.md",
 ]
 
 
