@@ -29,9 +29,9 @@ réordonner ni en sauter un sans le dire.
 - `$concevoir-experience-azd` fixe l'expérience d'une surface humaine avant
   le code, quand une décision humaine observable est en jeu.
 - `$structurer-code-azd` décide la structure du code (formes de données,
-  frontières, invariants, ADR) avant le premier patch, seulement quand le
-  changement traverse une frontière de module, ajoute une forme de donnée,
-  ou laisse le choix entre plusieurs structures.
+  frontières, invariants, ADR), après le plan, avant construire, seulement
+  lorsqu'un changement traverse une frontière de module, ajoute de l'état ou
+  une forme de donnée, ou laisse le choix entre plusieurs structures.
 - `$construire-solution-azd` écrit le plus petit changement valide en TDD
   strict.
 - Gate de sortie : test rouge puis vert sur le changement, contrat public

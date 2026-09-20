@@ -53,6 +53,15 @@ class GlossaryTests(unittest.TestCase):
         text = GLOSSARY.read_text(encoding="utf-8")
         self.assertNotIn(EM_DASH, text)
 
+    def test_every_bold_entry_names_where_it_lives(self) -> None:
+        import re
+
+        text = GLOSSARY.read_text(encoding="utf-8")
+        entries = re.findall(r"(?m)^\*\*[^*]+\*\*.*$", text)
+        self.assertTrue(entries)
+        missing = [entry for entry in entries if "Où il vit" not in entry]
+        self.assertEqual([], missing)
+
 
 if __name__ == "__main__":
     unittest.main()

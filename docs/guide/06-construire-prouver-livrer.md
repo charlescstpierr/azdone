@@ -17,6 +17,18 @@ vérifie chaque claim avec une preuve fraîche. `reviser-qualite-azd` fait
 relire par un agent distinct de l'auteur. `livrer-changement-azd` intègre ou
 publie selon `trust.yaml`.
 
+## Structurer le code
+
+`structurer-code-azd` intervient après le plan, avant construire, seulement
+lorsqu'un changement traverse une frontière de module, ajoute de l'état ou
+une forme de donnée, ou laisse le choix entre plusieurs structures. Il
+compare les options candidates et écrit la décision retenue comme ADR, avec
+les unités vérifiables qui complètent le plan sans le rouvrir.
+
+```text
+$structurer-code-azd "Le webhook Stripe et le webhook GitHub dupliquent la validation de signature. Choisis la structure avant le patch."
+```
+
 ## Construire
 
 `construire-solution-azd` boucle RED, GREEN, REFACTOR, et n'écrit que dans le

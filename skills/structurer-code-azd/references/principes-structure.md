@@ -4,7 +4,7 @@ Dix principes courts qui guident la procédure de `structurer-code-azd`. Chacun 
 
 ## 1. Formes de données d'abord
 
-Nommer les formes de données avant d'écrire une fonction: la structure suit la donnée, pas l'inverse.
+Nommer les formes de données avant d'écrire une fonction. La structure suit la donnée, pas l'inverse.
 Quand il s'applique: dès qu'une nouvelle entité, un nouvel état ou un nouveau champ apparaît dans le changement.
 Exemple: nommer `PaymentAttempt` avant d'écrire la fonction qui le traite.
 

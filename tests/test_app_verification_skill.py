@@ -61,6 +61,14 @@ class AppVerificationSkillTests(unittest.TestCase):
         text = (root / "docs/reference-skills.md").read_text(encoding="utf-8")
         self.assertIn("verifier-application-azd", text)
 
+    def test_prove_bundle_carries_the_app_verification_block(self) -> None:
+        bundle = read_skill_bundle("prouver-resultat-azd")
+        self.assertIn("app_verification", bundle)
+
+    def test_watch_bundle_cites_verify_application_skill(self) -> None:
+        bundle = read_skill_bundle("surveiller-livraison-azd")
+        self.assertIn("verifier-application-azd", bundle)
+
 
 if __name__ == "__main__":
     unittest.main()

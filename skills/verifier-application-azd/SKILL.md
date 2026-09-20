@@ -29,7 +29,7 @@ Artefact attendu : un skill repo-local `verifier-<app>/SKILL.md` (mode `generer`
 1. Lire la Boussole (cadrage : utilisateur, problème, succès, limites), le System Success Map, le contrat public et le Readiness Forecast ; inspecter le dépôt pour détecter les surfaces réelles et la façon de les lancer (`package.json`, `Makefile`, `pyproject`, `Dockerfile`, `compose`, scripts, README).
 2. Établir, sans rien installer, comment démarrer l'application en isolation : commande, port ou chemin, variables d'environnement non secrètes, données de test, condition de santé observable, commande d'arrêt.
 3. Établir comment observer chaque fonctionnalité : navigateur piloté pour le web, requêtes réelles pour une API, transcript stdout/stderr/exit code pour une CLI ou TUI, simulateur ou appareil pour mobile, conversation rejouée pour un chat, requête et invariant pour des données.
-4. Écrire le skill repo-local `verifier-<app>/SKILL.md` à partir de [verify-app-template.md](references/verify-app-template.md), dans le dossier de skills de l'hôte, avec la feature map ([feature-map-template.md](references/feature-map-template.md)) amorcée en `statut: never`.
+4. Écrire le skill repo-local `verifier-<app>/SKILL.md` à partir de [verify-app-template.md](references/verify-app-template.md), dans le dossier de skills de l'hôte, avec la feature map ([feature-map-template.md](references/feature-map-template.md)) amorcée en `statut: never`. Montrer le contenu avant écriture; ne jamais écraser une édition humaine sans le dire.
 5. Pour tout moyen manquant (navigateur, simulateur, fixture, compte de test), créer un gap dans le Readiness Forecast avec recommandation et repli ; ne jamais l'installer ni l'utiliser sans autorité.
 
 **`executer`** (à chaque preuve) :
@@ -46,7 +46,7 @@ Artefact attendu : un skill repo-local `verifier-<app>/SKILL.md` (mode `generer`
 
 ## Sortie
 
-Le skill rend un bloc `app_verification` documenté dans [app-verification-output.md](references/app-verification-output.md) : `mode`, `app`, `skill_path`, `started`, `health`, `matrix` (feature, observation, expected, observed, artifact, status), `feature_map_updated`, `gaps`, `verdict`.
+Le skill rend un bloc `app_verification` documenté dans [app-verification-output.md](references/app-verification-output.md) : `mode`, `app`, `skill_path`, `commit`, `started`, `matrix`, `non_nominal_covered`, `feature_map_updated`, `gaps`, `stopped`, `verdict`, `next_safe_action`.
 
 ## Arrêt et interdits
 

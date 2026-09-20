@@ -46,7 +46,7 @@ Un seul `manifest.json` par run. Un nouveau run ouvre un nouveau dossier
 }
 ```
 
-`t` est un horodatage UTC (`start_at`, `entries[].started_at` et `steps[].t`
+`t` est un horodatage UTC (`started_at`, `entries[].started_at` et `steps[].t`
 partagent le même format). `expected` et `observed` restent vides pour un
 `kind: test_start` ou `action`; ils sont obligatoires pour `assertion` et
 `result`.

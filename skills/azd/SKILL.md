@@ -23,8 +23,8 @@ reminder: "Nouvelle tâche ? Playbook correspondant ou rigueur nécessaire -> ap
 1. Lire `.azdone/trust.yaml`. Absent : proposer `/azd-setup`, continuer en `assisted` déclaré et le dire dans la réponse.
 2. Vérifier l'initialisation AZDone. Appeler `$initialiser-projet-azd` une seule fois si aucune preuve de setup n'existe. Sans setup préalable, `/azd-setup` reste à l'étape 4 du chemin normal.
 3. Classer la demande par capacité (`code-change | investigation | human-surface | release-ops | skill-mutation`) et par risque (`rapid | standard | critical`).
-4. Choisir le playbook correspondant. Copier ses étapes telles quelles dans la liste de tâches. Marquer `skip: <raison>` pour toute étape non exécutée.
-4bis. Insérer `$structurer-code-azd` avant la construction seulement lorsque le changement traverse une frontière de module, ajoute une forme de donnée ou laisse un choix de structure ouvert.
+4. Choisir le playbook correspondant. Copier ses étapes telles quelles dans la liste de tâches. Marquer `skip: <raison>` pour toute étape non exécutée. Un chevauchement direct signalé par `active_work.overlap` rend `blocked` avec `next_safe_action` (coordonner ou attendre).
+4bis. Insérer `$structurer-code-azd`, après le plan, avant construire, seulement lorsqu'un changement traverse une frontière de module, ajoute de l'état ou une forme de donnée, ou laisse le choix entre plusieurs structures.
 5. Appliquer la politique de `.azdone/trust.yaml` à chaque action sensible (voir [references/trust-policy.md](references/trust-policy.md)). `auto` : exécuter et journaliser. `conditional` : vérifier le témoin `.azdone/conditions-ok` (écrit par `reviser-qualite-azd` via `azd-trust-guard.py witness`) puis exécuter ou demander. `ask` : poser une seule question matérielle avec recommandation, meilleure alternative et statu quo. `never` : refuser et proposer la voie humaine.
 6. Ne jamais bloquer sur une question dont la réponse est observable par un prototype, un test ou une mesure.
 7. Terminer par le verdict honnête (`verified | partial | blocked | failed`), les preuves fraîches, la ligne de ledger et `next_safe_action`.

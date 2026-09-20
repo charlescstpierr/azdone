@@ -19,6 +19,7 @@ Artefact attendu : baseline, logs/metrics/traces horodatés, décision `continue
 - Un incident survient et exige preuve, mitigation et root cause séparées.
 - Un canary ou un rollback autorisé doit être conduit ou préparé.
 - Observation d'une PR ou d'une CI via `agents/azd-watcher.md` (lecture seule, réveil par `/loop` sous Claude Code et Cursor).
+- Après une release, rejouer `$verifier-application-azd executer` sur les fonctionnalités critiques pour prouver la version active.
 
 ## Procédure
 

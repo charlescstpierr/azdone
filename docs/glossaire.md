@@ -58,7 +58,7 @@ Les concepts eux-mêmes sont en français ou en anglais selon leur origine.
 
 **System Success Map** (carte de réussite système). Carte des éléments produit, techniques, opérationnels et commerciaux d'un projet, classés indispensable, recommandé, plus tard, hors périmètre ou inconnu. Où il vit : amorcée par `initialiser-projet-azd`, citée par `planifier-travail-azd` et `verifier-application-azd`.
 
-**trust-ledger**. Historique append-only des runs (`.azdone/trust-ledger.md`) : date, run_id, risque, verdict, actions automatiques exécutées, rollback, niveau effectif, streak. `/azd` s'en sert pour calculer promotion et rétrogradation. Où il vit : `skills/azd/references/trust-policy.md`.
+**trust-ledger**. Historique append-only des runs (`.azdone/trust-ledger.md`) : `date | run_id | risk | verdict | actions_auto | rollback | override | niveau_effectif | série | événement`. `/azd` s'en sert pour calculer promotion et rétrogradation. Où il vit : `skills/azd/references/trust-policy.md`.
 
 **Wayfinder** (navigation d'un grand projet : destination, brouillard, frontière). Mode de navigation pour un grand projet : destination observable, carte de décisions persistée, brouillard (`fog`) et frontière (`frontier`) de ce qui reste à découvrir, tickets de décision et reprise. Domain-agnostic, activé seulement quand une carte de navigation apporte une valeur réelle. Où il vit : `skills/planifier-travail-azd/`.
 

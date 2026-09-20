@@ -22,7 +22,7 @@ Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 | 04 | `diagnostiquer-probleme-azd` | la cause d’un échec est inconnue | diagnostic prouvé, sans patch |
 | 05 | `concevoir-experience-azd` | une surface humaine ou son interaction change | directions, prototype ou wireframe, décision |
 | 06 | `planifier-travail-azd` | dépendances, cartes, preuve ou reprise doivent être ordonnées | DAG, cartes, ownership, Proof Contract |
-| 06b | `structurer-code-azd` | un changement traverse une frontière de module, ajoute une forme de donnée, ou laisse le choix entre plusieurs structures | formes de données, frontières, ADR, unités vérifiables |
+| 06b | `structurer-code-azd` | lorsqu'un changement traverse une frontière de module, ajoute de l'état ou une forme de donnée, ou laisse le choix entre plusieurs structures | formes de données, frontières, ADR, unités vérifiables |
 | 07 | `isoler-travail-azd` | des tranches ou hypothèses sont réellement indépendantes | branches/worktrees, lane ledger, checkpoints |
 | 08 | `construire-solution-azd` | un plan ou test rouge est prêt pour un patch minimal | changement RED-GREEN-REFACTOR |
 | 09 | `prouver-resultat-azd` | un claim doit être déclaré terminé | matrice claim-by-claim et verdict |
@@ -40,7 +40,7 @@ Chaque skill reste invocable seul. Le pilote compose seulement les étapes
 utiles :
 
 ```text
-code-change    : 02 → 03 → 06 → 08 → 09 → 10 → 11
+code-change    : 02 → 03 → 06 → (06b) → 08 → 09 → 10 → 11
 investigation  : 02 → 03 → 04
 human-surface  : route normale + 05
 release-ops    : route normale + 11 → 12

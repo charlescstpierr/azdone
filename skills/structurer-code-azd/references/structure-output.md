@@ -49,7 +49,7 @@ structure:
 
 ## Règles de verdict
 
-- `decided`: une structure est choisie, l'ADR est écrit à `adr_path`, chaque `data_shapes` a ses invariants, `unverifiable_units` (`verifiable_units`) sont ordonnées avec leur preuve, et aucune forme de donnée du chemin critique ne reste `unknown`.
+- `decided`: une structure est choisie, l'ADR est écrit à `adr_path`, chaque `data_shapes` a ses invariants, les `verifiable_units` sont ordonnées avec leur preuve, et aucune forme de donnée du chemin critique ne reste `unknown`.
 - `question`: une décision matérielle reste ouverte (impact produit, coût irréversible ou ambiguïté sur une forme de donnée partagée); rendre alors `options` complet et poser au plus une question matérielle avant de continuer.
 - `blocked`: une forme de donnée du chemin critique reste `unknown`, un ADR requis ne peut pas être écrit à l'emplacement fixé par l'init, ou `shared_state` révèle une écriture concurrente non séparée; fail closed dans ces trois cas.
 - `decision` doit toujours nommer l'option retenue parmi `options`, jamais un choix implicite.

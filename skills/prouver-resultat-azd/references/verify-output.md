@@ -49,6 +49,12 @@ verification:
     planned_tools: []
     tools_actually_used: []
     missing_means: []
+  app_verification:
+    mode: generer | executer | maintenir
+    skill_path: ""
+    matrix: []
+    feature_map_updated: true | false
+    verdict: verified | partial | blocked | failed
   functional_proof: verified | partial | blocked | failed
   approval_readiness:
     target_ecosystems: []

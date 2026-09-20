@@ -29,7 +29,7 @@ Choisir le plus petit parcours qui couvre réellement le besoin:
 3. `$diagnostiquer-probleme-azd`: reproduire et isoler la cause d'un bug, incident ou échec incertain.
 4. `$concevoir-experience-azd`: produire un prototype ou design contract lorsqu'une décision humaine observable change.
 5. `$planifier-travail-azd`: construire cartes, graphe causal, dépendances, preuve et ordre d'exécution.
-5b. `$structurer-code-azd`: décider la structure du code (formes de données, frontières, invariants) avant le premier patch.
+5b. `$structurer-code-azd`: décider la structure du code (formes de données, frontières, invariants), après le plan, avant construire.
 6. `$isoler-travail-azd`: ouvrir seulement les lanes indépendantes que le risque et le scope justifient.
 7. `$construire-solution-azd`: implémenter la plus petite solution valide.
 8. `$prouver-resultat-azd`: séparer preuve fonctionnelle, readiness d'approbation et verdict externe.
@@ -58,7 +58,7 @@ Choisir le plus petit parcours qui couvre réellement le besoin:
 - Pour CLI/API/SDK, demander à `$planifier-travail-azd` un contrat DevEx exact (commands, flags, stdout, stderr, exit codes, config precedence, idempotency) seulement quand cette surface existe.
 - Pour un grand projet, demander à `$planifier-travail-azd` une destination, une decision map persistée, le fog/frontier, des decision tickets, claims, blocking et reprise avant l'execution plan; utiliser le mode Wayfinder (navigation d'un grand projet : destination, brouillard, frontière) seulement quand une carte de navigation apporte une valeur réelle.
 - Après `$concevoir-experience-azd`, transmettre la `UI acceptance matrix` sans perte à la planification, construction, preuve et review, en conservant chaque token, selector ou attribut normatif.
-- Après `$inspecter-projet-azd`, transmettre sans perte `discovery.contradictions`, `discovery.blind_spots` et les failure modes sourcés à la planification, construction, preuve et review.
+- Après `$inspecter-projet-azd`, transmettre sans perte `discovery.contradictions`, `discovery.blind_spots`, `discovery.active_work` et les failure modes sourcés à la planification, construction, preuve et review.
 - Utiliser `$isoler-travail-azd` seulement pour des hypothèses concurrentes, des tranches indépendantes ou une vérification adversariale; sinon rester séquentiel.
 - Ne jamais faire travailler deux subagents dans le même worktree; toute lane parallèle appartient au same repository et à un worktree distinct.
 - Garder le reviewer et tout evaluator hors du write scope de l'auteur: `author_id != reviewer_id`.

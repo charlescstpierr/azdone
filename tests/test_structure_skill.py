@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from _skill_helpers import assert_language_rule, read_skill, read_skill_bundle
+from _skill_helpers import assert_language_rule, normalized, read_skill, read_skill_bundle
 
 
 class StructureSkillTests(unittest.TestCase):
@@ -71,6 +71,31 @@ class StructureSkillTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         text = (root / "docs/reference-skills.md").read_text(encoding="utf-8")
         self.assertIn("structurer-code-azd", text)
+
+    def test_trigger_sentence_is_identical_across_the_six_sources(self) -> None:
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        trigger = (
+            "lorsqu'un changement traverse une frontière de module, "
+            "ajoute de l'état ou une forme de donnée, ou laisse le choix "
+            "entre plusieurs structures"
+        )
+        sources = (
+            "skills/structurer-code-azd/SKILL.md",
+            "skills/piloter-workflow-azd/SKILL.md",
+            "skills/azd/SKILL.md",
+            "skills/azd/playbooks/changement-code.md",
+            "docs/reference-skills.md",
+            "docs/parcours.md",
+        )
+        for relative_path in sources:
+            text = (root / relative_path).read_text(encoding="utf-8")
+            # Markdown hard-wraps long lines; compare on whitespace-normalized
+            # text so a line break inside the sentence does not fail this
+            # otherwise byte-for-byte check against each raw file.
+            self.assertIn(trigger, normalized(text), relative_path)
+            self.assertNotIn("touche plus de trois fichiers", text, relative_path)
 
 
 if __name__ == "__main__":
