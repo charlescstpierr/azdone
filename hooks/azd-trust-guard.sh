@@ -43,7 +43,7 @@ find_trust_file() {
 TRUST_FILE="$(find_trust_file)"
 [ -n "$TRUST_FILE" ] || exit 0
 CONTENT="$(<"$TRUST_FILE")"
-[[ "$CONTENT" =~ (^|$'\n')enforcement:[[:space:]]*enforced ]] || exit 0
+[[ "$CONTENT" =~ (^|$'\n')enforcement:[[:space:]]*[\"\']?enforced[\"\']?([[:space:]]|$|#) ]] || exit 0
 
 REASON="python3 est requis par hooks/azd-trust-guard.sh pour appliquer enforcement: enforced. Refus fail-closed. Installez python3 ou passez enforcement: declared dans .azdone/trust.yaml."
 if [[ "$RAW" == *'"tool_input"'* ]] || [[ "$RAW" =~ \"hook_event_name\"[[:space:]]*:[[:space:]]*\"PreToolUse\" ]]; then

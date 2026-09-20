@@ -117,3 +117,7 @@ Versionnez `.azdone/trust.yaml`, `.azdone/trust-ledger.md` et
 pas des artefacts de course.
 
 Suivant : [Modèles et sous-agents](04-modeles-et-sous-agents.md).
+
+## Approuver une fois, sans éditer la politique
+
+Quand le hook refuse une action `ask`, vous n'avez pas à modifier `trust.yaml`. Depuis votre propre terminal, `python3 .claude/hooks/azdone/azd-trust-guard.py approve deploy` autorise un déploiement une fois, pendant 30 minutes. L'agent ne peut pas lancer cette commande lui-même. Un déploiement qui vise la production exige en plus un témoin avec `rollback: proven`, écrit par la review.

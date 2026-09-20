@@ -51,7 +51,7 @@ LEVEL_DEFAULTS = {
 }
 LEVEL_ORDER = ("guided", "assisted", "autonomous", "full")
 RISK_ORDER = {"rapid": 0, "standard": 1, "critical": 2}
-WITNESS_KEYS = ("commit", "ci", "review", "reviewer_id", "author_id", "risk", "files_changed", "lanes", "written_at")
+WITNESS_KEYS = ("commit", "ci", "review", "reviewer_id", "author_id", "risk", "files_changed", "lanes", "rollback", "written_at")
 LEDGER_HEADER = "| date | run_id | risk | verdict | actions_auto | rollback | override | niveau_effectif | série | événement |"
 LEDGER_SEPARATOR = "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
 
@@ -263,6 +263,14 @@ def split_segments(command: str) -> list[str]:
             current = []
             index += 1
             continue
+        if char == "&":
+            previous = command[index - 1] if index > 0 else ""
+            following = command[index + 1] if index + 1 < length else ""
+            if previous not in (">", "<") and following not in (">", "<", "&"):
+                segments.append("".join(current))
+                current = []
+                index += 1
+                continue
         if two == "$(":
             segments.append("".join(current))
             current = []
@@ -313,9 +321,10 @@ def strip_wrappers(words: list[str]) -> list[str]:
 
 class Verdict:
     def __init__(self, kind: str, action: str, reason: str):
-        self.kind = kind          # "always_pause" | "action"
+        self.kind = kind          # "always_pause" | "action" | "protected"
         self.action = action
         self.reason = reason
+        self.production = False   # déploiement visant la production : exige un rollback prouvé
 
 
 def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> Verdict | None:
@@ -327,6 +336,8 @@ def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> V
     words = strip_wrappers(words)
     if not words:
         return None
+    if words[0] in ("sudo", "doas"):
+        return Verdict("action", "install_global", "commande sous sudo (changement de machine)")
     head = os.path.basename(words[0])
     args = words[1:]
     lowered = segment.lower()
@@ -339,6 +350,8 @@ def classify(segment: str, cwd: str, protected: list[str], trust_root: str) -> V
         return Verdict("always_pause", "delete_data", ALWAYS_PAUSE["delete_data"])
     if is_trust_tool(head, args, cwd, trust_root):
         return Verdict("action", "record_run", "journal de confiance (azd-trust-guard.py record|witness)")
+    if is_self_approval(head, args):
+        return Verdict("always_pause", "trust_file", "auto-approbation (azd-trust-guard.py approve lancé par l'agent ; un humain l'exécute dans son propre terminal)")
     spawn = classify_spawn_agent(head, args)
     if spawn:
         return spawn
@@ -402,6 +415,38 @@ def is_trust_tool(head: str, args: list[str], cwd: str = "", trust_root: str = "
     except OSError:
         return False
     return real in trusted_tool_paths(trust_root)
+
+
+def is_self_approval(head: str, args: list[str]) -> bool:
+    if head in ("python3", "python") and args:
+        script, sub = args[0], (args[1] if len(args) > 1 else "")
+    else:
+        script, sub = head, (args[0] if args else "")
+    return os.path.basename(script) == "azd-trust-guard.py" and sub == "approve"
+
+
+def approval_path(trust_file: str, action: str) -> str:
+    return os.path.join(os.path.dirname(trust_file), "approvals", action)
+
+
+def consume_approval(trust_file: str, action: str) -> bool:
+    """Vrai si un humain a approuvé cette action (fichier frais) ; consomme une approbation ponctuelle."""
+    path = approval_path(trust_file, action)
+    try:
+        if not os.path.isfile(path):
+            return False
+        with open(path, encoding="utf-8") as handle:
+            data = dict(line.partition(":")[::2] for line in handle.read().splitlines() if ":" in line)
+        data = {k.strip(): v.strip() for k, v in data.items()}
+        expires = float(data.get("expires_at", "0"))
+        if time.time() > expires:
+            os.remove(path)
+            return False
+        if data.get("once", "true") == "true":
+            os.remove(path)
+        return True
+    except (OSError, ValueError):
+        return False
 
 
 def trusted_tool_paths(trust_root: str) -> set[str]:
@@ -486,9 +531,17 @@ def classify_file_write(file_path: str, cwd: str, protected: list[str], trust_ro
 def classify_git(args: list[str], cwd: str) -> Verdict | None:
     if not args:
         return None
-    # options globales de git avant la sous-commande (-C dir, -c key=val)
+    # options globales de git avant la sous-commande (-C dir, -c key=val) ; -C change le dépôt visé
     while args and args[0].startswith("-"):
-        if args[0] in ("-C", "-c") and len(args) > 1:
+        if args[0] == "-C" and len(args) > 1:
+            target = args[1]
+            cwd = target if os.path.isabs(target) else os.path.join(cwd or os.getcwd(), target)
+            args = args[2:]
+        elif args[0].startswith("-C") and len(args[0]) > 2:
+            target = args[0][2:]
+            cwd = target if os.path.isabs(target) else os.path.join(cwd or os.getcwd(), target)
+            args = args[1:]
+        elif args[0] == "-c" and len(args) > 1:
             args = args[2:]
         else:
             args = args[1:]
@@ -587,9 +640,10 @@ def classify_credentials(head: str, args: list[str]) -> Verdict | None:
     first = args[0] if args else ""
     second = args[1] if len(args) > 1 else ""
     rules = {
-        "aws": first == "configure" or (first == "sso" and second == "login"),
-        "az": first == "login" or (first == "account" and second == "set"),
-        "gcloud": first == "auth",
+        "aws": first == "configure" or (first == "sso" and second == "login") or first in ("secretsmanager", "sts", "iam") or (first == "ssm" and second in ("get-parameter", "get-parameters", "get-parameters-by-path") and "--with-decryption" in args),
+        "kubectl": first == "get" and second in ("secret", "secrets"),
+        "az": first == "login" or (first == "account" and second == "set") or first == "keyvault" or (first == "ad" and second in ("sp", "app")),
+        "gcloud": first == "auth" or first == "secrets" or (first == "iam" and "keys" in args),
         "op": first in ("signin", "read", "item", "inject", "run"),
         "vault": first in ("login", "read", "kv", "write", "token"),
         "docker": first == "login",
@@ -610,9 +664,45 @@ def classify_credentials(head: str, args: list[str]) -> Verdict | None:
     return None
 
 
+DESTRUCTIVE_INFRA = {
+    "terraform": ("destroy",), "tofu": ("destroy",), "kubectl": ("delete", "drain"), "helm": ("uninstall", "delete"),
+    "pulumi": ("destroy",), "cdk": ("destroy",), "serverless": ("remove",), "sls": ("remove",), "fly": ("destroy", "apps"),
+    "flyctl": ("destroy", "apps"), "heroku": ("apps:destroy", "pg:reset", "addons:destroy"), "gcloud": ("delete",),
+    "az": ("delete",), "aws": ("delete-stack", "delete-db-instance", "delete-bucket", "rb", "terminate-instances", "delete-function"),
+    "docker": ("system", "volume"), "railway": ("delete", "down"), "vercel": ("remove", "rm"), "netlify": ("sites:delete",),
+}
+PRODUCTION_MARKERS = re.compile(r"(^|[\s/=:,-])(prod|production|live)([\s/=:,.]|$)", re.IGNORECASE)
+
+
+def is_destructive_infra(head: str, args: list[str]) -> bool:
+    subs = DESTRUCTIVE_INFRA.get(head)
+    if not subs:
+        return False
+    joined = " ".join(args[:3])
+    if head == "docker":
+        return ("system" in args[:1] and "prune" in args) or ("volume" in args[:1] and any(a in ("rm", "prune") for a in args))
+    if head == "vercel" and args[:1] and args[0] in ("remove", "rm"):
+        return True
+    return any(sub in args[:2] or sub in joined.split() for sub in subs)
+
+
+def targets_production(segment: str, head: str, args: list[str]) -> bool:
+    if head in ("vercel",) and ("--prod" in args or "--target=production" in args or "promote" in args[:1]):
+        return True
+    if head in ("fly", "flyctl") and args[:1] == ["deploy"]:
+        return True
+    if head in ("npm", "pnpm", "yarn", "bun") and any(a in ("publish",) for a in args[:1]):
+        return True
+    if head in ("cargo", "gem", "twine", "poetry") and args[:1] and args[0] in ("publish", "push", "upload"):
+        return True
+    return PRODUCTION_MARKERS.search(segment) is not None
+
+
 def classify_deploy(head: str, args: list[str], lowered: str) -> Verdict | None:
     first = args[0] if args else ""
     second = args[1] if len(args) > 1 else ""
+    if is_destructive_infra(head, args):
+        return Verdict("always_pause", "delete_data", ALWAYS_PAUSE["delete_data"] + " (infrastructure)")
     table = {
         "terraform": first in ("apply", "destroy", "import", "taint"),
         "tofu": first in ("apply", "destroy"),
@@ -649,13 +739,16 @@ def classify_deploy(head: str, args: list[str], lowered: str) -> Verdict | None:
         "mise": first == "run" and second in ("deploy", "release", "publish"),
         "task": first in ("deploy", "release", "publish"),
     }
+    verdict = None
     if table.get(head):
-        return Verdict("action", "deploy", f"{head} {first}".strip() + " (déploiement ou publication)")
-    if head in ("npm", "pnpm", "yarn", "bun") and first == "run" and second in ("deploy", "release", "publish", "deploy:prod", "deploy:production"):
-        return Verdict("action", "deploy", f"{head} run {second}")
-    if DEPLOY_SCRIPT.search(head) or (head in ("bash", "sh", "python", "python3", "node") and args and DEPLOY_SCRIPT.search(args[0])):
-        return Verdict("action", "deploy", "script de déploiement")
-    return None
+        verdict = Verdict("action", "deploy", f"{head} {first}".strip() + " (déploiement ou publication)")
+    elif head in ("npm", "pnpm", "yarn", "bun") and first == "run" and second in ("deploy", "release", "publish", "deploy:prod", "deploy:production"):
+        verdict = Verdict("action", "deploy", f"{head} run {second}")
+    elif DEPLOY_SCRIPT.search(head) or (head in ("bash", "sh", "python", "python3", "node") and args and DEPLOY_SCRIPT.search(args[0])):
+        verdict = Verdict("action", "deploy", "script de déploiement")
+    if verdict is not None and targets_production(lowered, head, args):
+        verdict.production = True
+    return verdict
 
 
 def classify_install(head: str, args: list[str], segment: str) -> Verdict | None:
@@ -758,6 +851,12 @@ def decide(verdict: Verdict, policy: dict, trust_file: str, cwd: str = "") -> st
         return f"{verdict.reason} : ces chemins passent en ask quel que soit le niveau.{hint}"
     if verdict.action == "record_run":
         return None
+    if verdict.action == "deploy" and getattr(verdict, "production", False):
+        witness = read_witness(trust_file)
+        if witness is None or witness.get("rollback") != "proven" or witness["_age"] >= WITNESS_MAX_AGE_SECONDS:
+            return ("Action toujours-pause : mutation de production sans rollback prouvé. Le témoin .azdone/conditions-ok doit "
+                    "porter `rollback: proven` (azd-trust-guard.py witness --rollback proven) et avoir moins de 30 minutes ; "
+                    "sinon un humain déploie lui-même.")
     level = str(policy.get("autonomy", "assisted")).strip()
     defaults = LEVEL_DEFAULTS.get(level, LEVEL_DEFAULTS["assisted"])
     actions = policy.get("actions") if isinstance(policy.get("actions"), dict) else {}
@@ -770,6 +869,11 @@ def decide(verdict: Verdict, policy: dict, trust_file: str, cwd: str = "") -> st
             return None
         return (f"Action '{verdict.action}' est 'conditional' ({verdict.reason}) mais le témoin "
                 f".azdone/conditions-ok ne satisfait pas la politique : {problem}.{hint}")
+    if value == "ask" and consume_approval(trust_file, verdict.action):
+        return None
+    if value == "ask":
+        return (f"Action '{verdict.action}' est 'ask' dans la politique de confiance ({verdict.reason}). Un humain peut l'approuver "
+                f"une fois depuis son propre terminal : `azd-trust-guard.py approve {verdict.action}`.{hint}")
     return f"Action '{verdict.action}' est '{value}' dans la politique de confiance ({verdict.reason}).{hint}"
 
 
@@ -850,7 +954,7 @@ def emit_deny(fmt: str, reason: str) -> None:
 
 
 def main() -> int:
-    if len(sys.argv) > 1 and sys.argv[1] in ("record", "witness", "status", "setup"):
+    if len(sys.argv) > 1 and sys.argv[1] in ("record", "witness", "status", "setup", "approve"):
         return run_subcommand(sys.argv[1:])
     fmt, command, cwd, file_path = read_payload()
     trust_file = find_trust_file(cwd)
@@ -928,7 +1032,13 @@ def run_subcommand(argv: list[str]) -> int:
     witness.add_argument("--risk", required=True, choices=("rapid", "standard", "critical"))
     witness.add_argument("--files-changed", type=int, required=True)
     witness.add_argument("--lanes", type=int, default=0)
+    witness.add_argument("--rollback", choices=("proven", "none"), default="none", help="rollback prouvé pour un déploiement de production")
     witness.add_argument("--repo", default="")
+    approve = sub.add_parser("approve", help="approbation humaine ponctuelle d'une action ask (à lancer depuis son propre terminal)")
+    approve.add_argument("action", choices=("commit", "push", "open_pr", "merge", "deploy", "install_global", "external_message", "spawn_agent"))
+    approve.add_argument("--minutes", type=int, default=30)
+    approve.add_argument("--standing", action="store_true", help="valable pour toutes les occurrences jusqu'à expiration, pas seulement une")
+    approve.add_argument("--repo", default="")
     record = sub.add_parser("record", help="journaliser un run et appliquer la confiance gagnée")
     record.add_argument("--run-id", required=True)
     record.add_argument("--risk", required=True, choices=("rapid", "standard", "critical"))
@@ -962,12 +1072,27 @@ def run_subcommand(argv: list[str]) -> int:
         stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         values = {"commit": args.commit, "ci": args.ci, "review": args.review, "reviewer_id": args.reviewer_id,
                   "author_id": args.author_id, "risk": args.risk, "files_changed": str(args.files_changed),
-                  "lanes": str(args.lanes), "written_at": stamp}
+                  "lanes": str(args.lanes), "rollback": args.rollback, "written_at": stamp}
         with open(path, "w", encoding="utf-8") as handle:
             handle.write("".join(f"{key}: {values[key]}\n" for key in WITNESS_KEYS))
         problem = check_witness(policy, trust_file, repo)
         print(f"témoin écrit : {path}")
         print("conditions : satisfaites" if problem is None else f"conditions : non satisfaites ({problem})")
+        return 0
+
+    if args.command == "approve":
+        path = approval_path(trust_file, args.action)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        expires = time.time() + max(1, args.minutes) * 60
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(f"action: {args.action}\nonce: {'false' if args.standing else 'true'}\nexpires_at: {expires:.0f}\n"
+                         f"granted_at: {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}\n")
+        ledger = ledger_path(policy, azdone_dir)
+        if os.path.isfile(ledger):
+            with open(ledger, "a", encoding="utf-8") as handle:
+                handle.write(f"| {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} | approve | - | - | {args.action} | non | "
+                             f"{'standing' if args.standing else 'once'} | {policy.get('autonomy', 'assisted')} | - | approval |\n")
+        print(f"approbation écrite : {path} ({'permanente' if args.standing else 'ponctuelle'}, {args.minutes} min)")
         return 0
 
     if args.command == "setup":

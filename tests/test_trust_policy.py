@@ -375,8 +375,10 @@ class HookClassificationTests(unittest.TestCase):
             trust = write_trust_yaml(Path(tmp), deploy="ask", push="auto")
             for command in ("cat docs/deploy.md", "git push origin feature/deploy-fix", "grep deploy README.md"):
                 self.assert_allowed(run_hook(claude_payload(command), trust_file=trust), command)
-            for command in ("terraform apply -auto-approve", "kubectl apply -f k8s/", "make deploy", "npm run deploy", "vercel --prod", "./scripts/deploy.sh", "npm publish"):
+            for command in ("terraform apply -auto-approve", "kubectl apply -f k8s/", "make deploy", "npm run deploy", "./scripts/deploy.sh"):
                 self.assert_denied(run_hook(claude_payload(command), trust_file=trust), command, contains="'deploy'")
+            for command in ("vercel --prod", "npm publish", "kubectl apply -f production/"):
+                self.assert_denied(run_hook(claude_payload(command), trust_file=trust), command, contains="rollback")
 
     def test_protected_paths_block_writes_but_not_reads(self) -> None:
         with self._tmp() as tmp:
@@ -669,6 +671,109 @@ class ReviewBypassRegressionTests(unittest.TestCase):
             self.assertIn("modifié hors ledger", status)
             subprocess.run(["python3", str(HOOK_PY), "setup", "--repo", str(repo)], check=True, capture_output=True)
             self.assertEqual("", self._run(repo, trust, "git push origin feature").strip())
+
+
+class CodexReviewRegressionTests(unittest.TestCase):
+    """Findings de la review Codex sur la PR #1 ; chacun doit rester fermé."""
+
+    def _tmp(self):
+        import tempfile
+
+        return tempfile.TemporaryDirectory()
+
+    def _repo(self, tmp: str, extra: str = "") -> tuple[Path, Path]:
+        repo = Path(tmp) / "repo"
+        (repo / ".azdone").mkdir(parents=True)
+        subprocess.run(["git", "init", "-q", "-b", "feature", str(repo)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "i"], check=True, capture_output=True)
+        trust = repo / ".azdone" / "trust.yaml"
+        trust.write_text("autonomy: autonomous\nceiling: full\nenforcement: enforced\nactions:\n  push: auto\n  deploy: ask\n  install_global: ask\n" + extra
+                         + "protected_paths:\n  - .azdone/trust.yaml\n", encoding="utf-8")
+        return repo, trust
+
+    def _run(self, repo: Path, trust: Path, command: str) -> str:
+        return run_hook(claude_payload(command, cwd=str(repo)), trust_file=trust).stdout
+
+    def test_redirect_attached_to_protected_path_is_denied(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            self.assertIn("toujours-pause", self._run(repo, trust, "echo 'enforcement: declared' >.azdone/trust.yaml"))
+            self.assertIn("toujours-pause", self._run(repo, trust, "printf x >>.azdone/trust.yaml"))
+
+    def test_single_ampersand_separates_segments_but_redirections_survive(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            self.assertIn("suppression", self._run(repo, trust, "echo ok & rm -rf src"))
+            self.assertEqual("", self._run(repo, trust, "npm test 2>&1").strip())
+            self.assertEqual("", self._run(repo, trust, "npm test &> /tmp/log").strip())
+
+    def test_sudo_behind_a_wrapper_is_still_classified(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            for command in ("command sudo apt-get install jq", "env sudo apt-get install jq", "nohup sudo apt-get install jq"):
+                self.assertIn("install_global", self._run(repo, trust, command), command)
+
+    def test_git_dash_C_uses_the_targeted_repository_branch(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            other = repo / "other"
+            subprocess.run(["git", "init", "-q", "-b", "main", str(other)], check=True, capture_output=True)
+            self.assertIn("'merge'", self._run(repo, trust, "git -C other push"))
+            self.assertEqual("", self._run(repo, trust, "git push").strip())
+
+    def test_destructive_infrastructure_is_always_pause(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp, extra="  delete_data: auto\n")
+            for command in ("terraform destroy -auto-approve", "kubectl delete -f k8s/", "helm uninstall app", "pulumi destroy", "docker system prune -af", "aws cloudformation delete-stack --stack-name x"):
+                self.assertIn("suppression", self._run(repo, trust, command), command)
+
+    def test_production_deploy_requires_proven_rollback_in_witness(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp, extra="")
+            trust.write_text(trust.read_text(encoding="utf-8").replace("deploy: ask", "deploy: auto"), encoding="utf-8")
+            for command in ("vercel --prod", "kubectl apply -f production/", "fly deploy", "npm publish"):
+                self.assertIn("rollback prouvé", self._run(repo, trust, command), command)
+            self.assertEqual("", self._run(repo, trust, "kubectl apply -f staging/").strip())
+            head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+            subprocess.run(["python3", str(HOOK_PY), "witness", "--commit", head, "--ci", "green", "--review", "accept", "--reviewer-id", "r", "--author-id", "a", "--risk", "standard", "--files-changed", "1", "--rollback", "proven", "--repo", str(repo)], check=True, capture_output=True)
+            self.assertEqual("", self._run(repo, trust, "vercel --prod").strip())
+
+    def test_cloud_secret_access_is_credentials(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            for command in ("aws secretsmanager get-secret-value --secret-id x", "aws sts get-session-token", "az keyvault secret show --name x", "gcloud secrets versions access latest --secret=x", "kubectl get secret db -o yaml", "aws ssm get-parameter --name x --with-decryption"):
+                self.assertIn("credentials", self._run(repo, trust, command), command)
+
+    def test_human_one_shot_approval_unlocks_ask_once_and_agent_cannot_self_approve(self) -> None:
+        with self._tmp() as tmp:
+            repo, trust = self._repo(tmp)
+            self.assertIn("approve deploy", self._run(repo, trust, "kubectl apply -f staging/"))
+            self.assertIn("auto-approbation", self._run(repo, trust, "python3 .claude/hooks/azdone/azd-trust-guard.py approve deploy"))
+            subprocess.run(["python3", str(HOOK_PY), "approve", "deploy", "--repo", str(repo)], check=True, capture_output=True)
+            self.assertEqual("", self._run(repo, trust, "kubectl apply -f staging/").strip())
+            self.assertIn("'deploy'", self._run(repo, trust, "kubectl apply -f staging/"))
+            subprocess.run(["python3", str(HOOK_PY), "approve", "deploy", "--standing", "--minutes", "5", "--repo", str(repo)], check=True, capture_output=True)
+            self.assertEqual("", self._run(repo, trust, "kubectl apply -f staging/").strip())
+            self.assertEqual("", self._run(repo, trust, "kubectl apply -f staging/").strip())
+            trust.write_text(trust.read_text(encoding="utf-8").replace("  deploy: ask\n", "  deploy: never\n"), encoding="utf-8")
+            self.assertIn("'never'", self._run(repo, trust, "kubectl apply -f staging/"))
+
+    def test_bash_fallback_recognizes_quoted_enforced(self) -> None:
+        with self._tmp() as tmp:
+            trust = Path(tmp) / "trust.yaml"
+            for spelling in ('enforcement: "enforced"', "enforcement: 'enforced'", "enforcement:   enforced   # note"):
+                trust.write_text(spelling + "\n", encoding="utf-8")
+                result = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps(claude_payload("ls")), capture_output=True, text=True, env={"PATH": "/nonexistent", "AZD_TRUST_FILE": str(trust)}, timeout=10)
+                self.assertIn("python3", result.stdout, spelling)
+
+    def test_template_leaves_level_derived_actions_to_autonomy(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("guard", HOOK_PY)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        actions = module.parse_trust_yaml(read(TRUST_EXAMPLE)).get("actions", {})
+        self.assertEqual({"credentials": "never", "delete_data": "never", "rewrite_shared_history": "never"}, actions)
 
 
 class HookManifestTests(unittest.TestCase):

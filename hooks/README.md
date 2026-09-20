@@ -7,7 +7,7 @@ Hook de confiance AZDone. Il lit la commande shell qu'un agent s'apprête à ex�
 1. Détecte le format d'entrée (Claude Code ou Cursor) et décode le JSON avec un vrai parseur, jamais par expression régulière.
 2. Cherche `.azdone/trust.yaml` en remontant depuis le `cwd` reçu, ou utilise `$AZD_TRUST_FILE` s'il est défini (tests).
 3. Fichier absent ou `enforcement: declared` : autorise sans rien afficher. Politique `enforced` illisible : refuse (fail-closed).
-4. Découpe la commande sur `&&`, `||`, `;`, `|`, sauts de ligne, `$( )`, et ouvre `bash -c "..."` et `eval`. Chaque segment est classé ; le premier refus l'emporte.
+4. Découpe la commande sur `&&`, `||`, `&`, `;`, `|`, sauts de ligne, `$( )`, et ouvre `bash -c "..."` et `eval` ; `sudo` est reconnu même derrière `command`, `env` ou `nohup` ; `git -C <dir>` est évalué dans le dépôt visé. Chaque segment est classé ; le premier refus l'emporte.
 5. Applique `actions.<action>` (`auto | conditional | ask | never`) avec les défauts du niveau `autonomy` quand la clé manque. `conditional` n'autorise que si le témoin `.azdone/conditions-ok` satisfait `conditions:` (voir « Témoin » ci-dessous).
 6. La liste toujours-pause refuse quel que soit `actions.*` ou `autonomy: full`.
 
@@ -17,7 +17,7 @@ Hook de confiance AZDone. Il lit la commande shell qu'un agent s'apprête à ex�
 | --- | --- | --- |
 | toujours-pause : force-push | `git push --force`, `-f`, `--force-with-lease`, `--mirror`, refspec `+main`, `+HEAD:main` | refus |
 | toujours-pause : suppression | `rm -r*` hors `/tmp` et hors dossiers d'artefacts (`node_modules`, `dist`, `build`, `.cache`, `target`, `.venv`...), tout chemin contenant `..`, `git branch -D`, `git push --delete` ou `:branche`, `git clean -f`, `find -delete`, `DROP TABLE`, `TRUNCATE TABLE`, `DELETE FROM` ou `UPDATE ... SET` sans `WHERE`, `gh repo delete` | refus |
-| toujours-pause : credentials | `aws configure`, `gh auth`, `gcloud auth`, `az login`, `op`, `vault`, `docker login`, `npm login`, `git credential`, affectation `*_TOKEN=`, `*_SECRET=`, `*PASSWORD=`, `*API_KEY=` | refus |
+| toujours-pause : credentials | `aws configure`, `aws secretsmanager`, `aws sts`, `aws ssm --with-decryption`, `az login`, `az keyvault`, `gcloud auth`, `gcloud secrets`, `kubectl get secret`, `gh auth`, `op`, `vault`, `docker login`, `npm login`, `git credential`, affectation `*_TOKEN=`, `*_SECRET=`, `*PASSWORD=`, `*API_KEY=` | refus |
 | toujours-pause : historique partagé | `git filter-branch`, `filter-repo`, `reflog expire`, `gc --prune` | refus |
 | toujours-pause : trust.yaml | toute écriture vers `.azdone/trust.yaml` (`>>`, `sed -i`, `cp`, `mv`...) | refus |
 | toujours-pause : message client | e-mail, SMS et messagerie client (`sendmail`, `mail`, SendGrid, Twilio, Mailgun, Postmark, Intercom, Customer.io...) | refus |
@@ -29,7 +29,10 @@ Hook de confiance AZDone. Il lit la commande shell qu'un agent s'apprête à ex�
 | `install_global` | `sudo`, `npm i -g`, `pip install --user`, `pipx`, `brew`, `apt`, `dnf`, `pacman`, `cargo install`, `go install`, `gem install`, `curl ... \| sh` | selon politique |
 | `external_message` | `gh pr comment`, `gh pr review`, `gh issue comment`, `gh api` non GET, webhooks Slack, Discord, Telegram, Teams, `curl`/`wget`/`http` non GET vers un hôte externe (localhost exclu) | selon politique |
 | `spawn_agent` | `codex exec` sans `-s read-only`, `claude -p` sans `--permission-mode plan` ni `--allowedTools`, `agent -p` (CLI Cursor, sans mode lecture seule) | selon politique (ask par défaut, auto en `full`) |
-| `record_run` | `azd-trust-guard.py record`, `witness`, `status` | toujours auto |
+| `record_run` | `azd-trust-guard.py record`, `witness`, `status`, `setup` (vrai outil résolu dans un dossier de hooks connu) | toujours auto |
+| toujours-pause : production | déploiement visant la production (`--prod`, `production/`, `fly deploy`, `npm publish`...) sans témoin `rollback: proven` frais | refus |
+| toujours-pause : infrastructure | `terraform destroy`, `kubectl delete`, `helm uninstall`, `pulumi destroy`, `cdk destroy`, `docker system prune`, `aws ... delete-stack` | refus |
+| toujours-pause : auto-approbation | `azd-trust-guard.py approve` lancé par l'agent | refus |
 | chemin protégé | écriture (`>`, `cp`, `mv`, `sed -i`, script...) vers une entrée de `protected_paths` ; la lecture (`cat`, `grep`, `git diff`...) passe | refus (ask) |
 | hors dépôt | écriture (`>`, `>>`, `tee`, `cp`, `mv`, `sed -i`) vers un chemin absolu ou `~` hors de la racine du dépôt et hors `/tmp` | refus (ask) |
 | outils natifs Write/Edit (Claude Code) | même règles pour `tool_input.file_path` : trust.yaml en toujours-pause, `protected_paths` et hors dépôt en ask | refus |
@@ -56,6 +59,10 @@ Limites connues, volontaires : `git rebase`, `git reset --hard`, `git checkout -
 | Cursor | `{"hook_event_name":"beforeShellExecution","command":"...","cwd":"...","workspace_roots":["..."]}` | `{"permission":"deny","user_message":"...","agent_message":"..."}` | exit 0, aucune sortie |
 
 Cursor envoie aussi `hook_event_name` ; le format Claude Code se reconnaît à la présence de `tool_input` ou à `hook_event_name == "PreToolUse"`.
+
+## Approbation ponctuelle : `approve`
+
+Une action `ask` refusée peut être approuvée par un humain depuis son propre terminal : `python3 <hooks>/azd-trust-guard.py approve <action> [--minutes 30] [--standing]`. Le fichier `.azdone/approvals/<action>` est consommé au premier usage (ou vaut jusqu'à expiration avec `--standing`) et journalisé dans le ledger. Lancée par l'agent, la même commande est refusée en toujours-pause : le hook ne peut pas distinguer les terminaux, mais il voit passer chaque commande de l'agent, et c'est précisément ce chemin qu'il ferme.
 
 ## Intégrité de trust.yaml
 

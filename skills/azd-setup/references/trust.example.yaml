@@ -4,18 +4,19 @@ autonomy: autonomous          # niveau courant: guided | assisted | autonomous |
 ceiling: full                 # niveau maximal que la confiance gagnée peut atteindre. autonomy <= ceiling toujours; azd-setup applique la contrainte.
 enforcement: declared         # declared | enforced. declared = politique affichée sans hook actif. enforced = hooks actifs sur Claude Code / Cursor.
 
-actions:                      # une valeur par action, parmi auto | conditional | ask | never. Prime sur le niveau, sauf never et always_pause.
-  commit: auto                  # créer un commit local.
-  push: auto                    # pousser vers le remote.
-  open_pr: auto                 # ouvrir une pull request.
-  merge: conditional            # fusionner: auto seulement si le témoin .azdone/conditions-ok satisfait les conditions ci-dessous, sinon ask. Témoin écrit par reviser-qualite-azd via `azd-trust-guard.py witness`, ou à la main sans hook.
-  deploy: ask                   # déclencher un déploiement.
-  install_global: ask           # installer une dépendance globale ou changer la configuration machine.
+actions:                      # une valeur par action, parmi auto | conditional | ask | never. Une clé absente suit le niveau `autonomy` (tableau ci-dessous) et évolue avec lui lors d'une promotion ; une clé écrite ici est figée et prime sur le niveau, sauf never et always_pause. azd-setup n'écrit que les surcharges demandées par l'humain.
   credentials: never            # créer ou utiliser des identifiants. Toujours-pause, jamais auto.
-  external_message: ask         # envoyer un message à un client ou à un tiers.
-  delete_data: never            # supprimer des données ou des branches non fusionnées. Toujours-pause.
+  delete_data: never            # supprimer des données, des branches non fusionnées ou de l'infrastructure. Toujours-pause.
   rewrite_shared_history: never # réécrire l'historique Git partagé. Toujours-pause.
-  spawn_agent: ask               # lancer un CLI d'agent externe hors mode lecture seule (codex exec, claude -p, agent -p sans restriction). Défauts: guided/assisted/autonomous ask, full auto. Un appel en lecture seule conforme à models.adapters reste non classé, sauf l'adaptateur Cursor (agent -p) qui reste classé faute de mode lecture seule natif.
+  # commit: auto                # dérivé du niveau : guided ask, sinon auto. Décommenter pour figer.
+  # push: auto                  # guided/assisted ask, autonomous/full auto.
+  # open_pr: auto               # guided/assisted ask, autonomous/full auto.
+  # merge: conditional          # guided/assisted ask, autonomous conditional (témoin .azdone/conditions-ok écrit par reviser-qualite-azd via `azd-trust-guard.py witness`), full auto.
+  # deploy: ask                 # guided/assisted/autonomous ask, full conditional. Un déploiement visant la production exige en plus un témoin avec `rollback: proven`.
+  # install_global: ask         # ask sauf full auto.
+  # external_message: ask       # ask sauf full auto. Un message à un client ou à un tiers reste toujours-pause.
+  # spawn_agent: ask            # lancer un CLI d'agent externe hors mode lecture seule (codex exec, claude -p, agent -p sans restriction). ask sauf full auto. Un appel en lecture seule conforme à models.adapters reste non classé, sauf l'adaptateur Cursor (agent -p) qui reste classé faute de mode lecture seule natif.
+  # Une action `ask` peut être approuvée une fois par un humain depuis son propre terminal : `azd-trust-guard.py approve <action>` (30 minutes, consommée au premier usage ; `--standing` pour la durée). L'agent ne peut pas s'auto-approuver : le hook refuse cette commande quand c'est lui qui la lance.
 
 conditions:                   # conditions requises pour qu'une action `conditional` devienne automatique. Vérifiées par le hook via le témoin .azdone/conditions-ok, jamais par lecture directe de trust.yaml.
   require_green_ci: true        # la CI doit être verte sur le commit courant (champ `ci` du témoin).

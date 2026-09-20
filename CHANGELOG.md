@@ -10,6 +10,8 @@ Toutes les modifications notables du package public sont documentées ici.
 
 ## 0.2.0-preview (2026-09-19)
 
+- Hook : séparateur `&`, `sudo` derrière un wrapper, `git -C`, redirection collée au chemin, infrastructure destructive et accès aux secrets cloud en toujours-pause, déploiement de production conditionné à `rollback: proven`, approbation humaine ponctuelle `approve` pour une action `ask`, repli bash tolérant aux valeurs citées. Le gabarit `trust.yaml` ne fige plus les actions dérivées du niveau.
+
 - Couche d'entrée `/azd` et `/azd-setup` par-dessus les 18 skills existants,
   avec neuf playbooks (dont `prototype`, code jetable pour trancher une
   question par la mesure) et cinq rôles de sous-agents (`azd-scout`,
