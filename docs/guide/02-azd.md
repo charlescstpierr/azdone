@@ -63,7 +63,7 @@ vous voulez sortir pour reprendre une conversation ordinaire.
 
 ## Toujours invocables seuls
 
-Les dix-sept skills existants restent utilisables directement, par exemple
+Les dix-huit skills existants restent utilisables directement, par exemple
 `$prouver-resultat-azd`, sans passer par `/azd`. `/azd` les compose, il ne les
 remplace pas. Voir la [référence des skills](../reference-skills.md).
 

@@ -43,8 +43,8 @@ find .agents/skills .claude/skills .cursor/skills -mindepth 1 -maxdepth 1 -type 
   \( -name '*-azd' -o -name 'azd' -o -name 'azd-setup' \) 2>/dev/null | wc -l
 ```
 
-Vous devez compter 19 dossiers au total dans l'emplacement que vous avez
-choisi : les 17 skills existants, plus `azd` et `azd-setup`.
+Vous devez compter 20 dossiers au total dans l'emplacement que vous avez
+choisi : les 18 skills existants, plus `azd` et `azd-setup`.
 
 ## Enregistrer le hook de confiance (optionnel)
 

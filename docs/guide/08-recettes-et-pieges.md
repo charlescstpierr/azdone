@@ -38,7 +38,7 @@ n'a pas encore été exécuté. Voir [Validation et limites des
 preuves](../validation.md).
 
 **Un skill invoqué seul reste valide.** Vous n'êtes jamais obligé de passer
-par `/azd` ; les dix-sept skills existants gardent leurs contrats et peuvent
+par `/azd` ; les dix-huit skills existants gardent leurs contrats et peuvent
 être appelés directement.
 
 ## Quand le hook refuse

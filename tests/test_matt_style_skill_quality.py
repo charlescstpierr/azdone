@@ -45,8 +45,8 @@ def default_prompt(openai_yaml: Path) -> str:
 class MattStyleSkillQualityTests(unittest.TestCase):
     maxDiff = None
 
-    def test_all_17_azdone_skill_directories_are_present(self) -> None:
-        self.assertEqual(17, len(skill_dirs()))
+    def test_all_18_azdone_skill_directories_are_present(self) -> None:
+        self.assertEqual(18, len(skill_dirs()))
 
     def test_descriptions_explain_capability_and_use_when_trigger(self) -> None:
         failures = []

@@ -1,6 +1,6 @@
 # Le guide AZDone
 
-AZDone route une demande à travers dix-sept skills ordinaires, sans runtime ni
+AZDone route une demande à travers dix-huit skills ordinaires, sans runtime ni
 service. `/azd` lit votre objectif, choisit un playbook, applique la politique
 de confiance de `.azdone/trust.yaml`, et rend un verdict honnête. Ce guide
 enseigne cette habitude avec des prompts réels.

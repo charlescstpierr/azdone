@@ -10,7 +10,7 @@ Toutes les modifications notables du package public sont documentées ici.
 
 ## 0.2.0-preview (2026-09-19)
 
-- Couche d'entrée `/azd` et `/azd-setup` par-dessus les 17 skills existants,
+- Couche d'entrée `/azd` et `/azd-setup` par-dessus les 18 skills existants,
   avec neuf playbooks (dont `prototype`, code jetable pour trancher une
   question par la mesure) et cinq rôles de sous-agents (`azd-scout`,
   `azd-builder`, `azd-verifier`, `azd-reviewer`, `azd-watcher`).
@@ -24,6 +24,11 @@ Toutes les modifications notables du package public sont documentées ici.
   `verifier-<app>` qui lance et exerce l'application réelle en isolation ;
   `prouver-resultat-azd` l'exécute pour tout claim sur une surface
   exécutable ; feature map déplacée dans ce skill.
+- Nouveau skill conditionnel `structurer-code-azd` (étape 06b, entre
+  planifier et construire) : décide la structure du code (formes de
+  données, frontières, invariants, ADR) avant le premier patch, lorsqu'un
+  changement traverse une frontière de module, ajoute une forme de donnée,
+  ou laisse le choix entre plusieurs structures.
 - Témoin `.azdone/conditions-ok`, écrit par la review finale et vérifié par
   le hook contre `conditions:` pour un `merge` `conditional`; promotion et
   rétrogradation automatiques d'`autonomy:` par la seule voie outillée

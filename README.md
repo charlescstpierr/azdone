@@ -1,6 +1,6 @@
 # AZDone
 
-AZDone est une couche d'entrée, `/azd`, posée sur **17 Agent Skills
+AZDone est une couche d'entrée, `/azd`, posée sur **18 Agent Skills
 ordinaires**. Elle route un objectif jusqu'à un résultat construit, prouvé,
 révisé et livré, sous une politique de confiance déclarative que vous
 contrôlez.
@@ -15,7 +15,7 @@ contrôlez.
 - Aucun besoin d'OMX pour utiliser les skills.
 - L'état du projet et de la confiance reste dans le dépôt utilisateur
   (`.azdone/`).
-- Les 17 dossiers de skills passent les contrôles structurels et la suite de
+- Les 18 dossiers de skills passent les contrôles structurels et la suite de
   contrats locale.
 - Le Pilot 0 sur un vrai projet humain n'a pas encore été exécuté.
 - AZDone ne revendique ni supériorité générale ni approbation Apple, Google,
@@ -121,10 +121,10 @@ rôle pointe vers `host:small|default|strong` (sous-agent natif de l'hôte) ou
 relecteur reste indépendant de l'auteur. Détails dans le [guide des modèles
 et sous-agents](docs/guide/04-modeles-et-sous-agents.md).
 
-## Les 17 skills
+## Les 18 skills
 
 Chaque skill reste invocable seul, sans passer par `/azd`. Voir la
-[référence des 17 skills](docs/reference-skills.md).
+[référence des 18 skills](docs/reference-skills.md).
 
 ## Documentation
 

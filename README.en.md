@@ -1,6 +1,6 @@
 # AZDone
 
-AZDone is an entry layer, `/azd`, on top of **17 ordinary Agent Skills**. It
+AZDone is an entry layer, `/azd`, on top of **18 ordinary Agent Skills**. It
 routes a goal to a built, proven, reviewed, and delivered outcome, under a
 declarative trust policy you control.
 
@@ -13,7 +13,7 @@ declarative trust policy you control.
 - No AZDone runtime, daemon, dashboard, or proprietary service.
 - OMX is not required.
 - Project and trust state stays inside the user repository (`.azdone/`).
-- The 17 skill folders pass local structural and contract checks.
+- The 18 skill folders pass local structural and contract checks.
 - Pilot 0 on a real human-led project has not run yet.
 - AZDone does not claim general superiority or external platform approval.
 - This repository is public for audit purposes, but public does not yet mean
@@ -114,10 +114,10 @@ points to `host:small|default|strong` (the host's native subagent) or
 reviewer stays independent from the author. Details in the [models and
 subagents guide](docs/guide/04-modeles-et-sous-agents.md).
 
-## The 17 skills
+## The 18 skills
 
 Every skill stays invocable on its own, without going through `/azd`. See the
-[17-skill reference](docs/reference-skills.md).
+[18-skill reference](docs/reference-skills.md).
 
 ## Documentation
 

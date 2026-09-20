@@ -11,7 +11,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 Elle vérifie notamment :
 
-- 17 dossiers de skills et leurs métadonnées;
+- 18 dossiers de skills et leurs métadonnées;
 - descriptions avec déclencheurs explicites;
 - quick starts et prompts publics;
 - références locales résolues;

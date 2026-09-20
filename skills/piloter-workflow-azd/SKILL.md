@@ -29,6 +29,7 @@ Choisir le plus petit parcours qui couvre réellement le besoin:
 3. `$diagnostiquer-probleme-azd`: reproduire et isoler la cause d'un bug, incident ou échec incertain.
 4. `$concevoir-experience-azd`: produire un prototype ou design contract lorsqu'une décision humaine observable change.
 5. `$planifier-travail-azd`: construire cartes, graphe causal, dépendances, preuve et ordre d'exécution.
+5b. `$structurer-code-azd`: décider la structure du code (formes de données, frontières, invariants) avant le premier patch.
 6. `$isoler-travail-azd`: ouvrir seulement les lanes indépendantes que le risque et le scope justifient.
 7. `$construire-solution-azd`: implémenter la plus petite solution valide.
 8. `$prouver-resultat-azd`: séparer preuve fonctionnelle, readiness d'approbation et verdict externe.
@@ -53,6 +54,7 @@ Choisir le plus petit parcours qui couvre réellement le besoin:
 - Pour tout travail sur un dépôt, appeler ensuite `$inspecter-projet-azd` avant le diagnostic, le design, le plan ou le code, sauf si les preuves du dépôt ont déjà été fournies et sont encore fraîches; appeler `$diagnostiquer-probleme-azd` avant le plan lorsque la cause reste inconnue.
 - Pendant une passe `$clarifier-objectif-azd`, poser au plus une question matérielle par round, arrêter tôt quand le contrat est assez sûr, et retourner `blocked` quand le zero-assumption gate ne permet pas d'avancer.
 - Appeler `$concevoir-experience-azd` seulement lorsqu'une UI, CLI/TUI, app, IDE, chat, onboarding, rapport ou notification change une décision humaine observable. Pour une sortie textuelle stable sans décision de design, omettre cette étape et laisser `$prouver-resultat-azd` prouver le contrat.
+- Appeler `$structurer-code-azd` seulement lorsqu'un changement traverse une frontière de module, ajoute de l'état ou une forme de donnée, ou laisse le choix entre plusieurs structures; sinon omettre.
 - Pour CLI/API/SDK, demander à `$planifier-travail-azd` un contrat DevEx exact (commands, flags, stdout, stderr, exit codes, config precedence, idempotency) seulement quand cette surface existe.
 - Pour un grand projet, demander à `$planifier-travail-azd` une destination, une decision map persistée, le fog/frontier, des decision tickets, claims, blocking et reprise avant l'execution plan; utiliser le mode Wayfinder seulement quand une carte de navigation apporte une valeur réelle.
 - Après `$concevoir-experience-azd`, transmettre la `UI acceptance matrix` sans perte à la planification, construction, preuve et review, en conservant chaque token, selector ou attribut normatif.

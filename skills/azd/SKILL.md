@@ -10,7 +10,7 @@ reminder: "Nouvelle tâche ? Playbook correspondant ou rigueur nécessaire -> ap
 
 # azd · Point d'entrée AZDone
 
-`/azd` route une demande vers les 17 skills `$...-azd` existants. Elle ne réécrit aucun de leurs contrats.
+`/azd` route une demande vers les 18 skills `$...-azd` existants. Elle ne réécrit aucun de leurs contrats.
 
 ## Quick start
 
@@ -24,6 +24,7 @@ reminder: "Nouvelle tâche ? Playbook correspondant ou rigueur nécessaire -> ap
 2. Vérifier l'initialisation AZDone. Appeler `$initialiser-projet-azd` une seule fois si aucune preuve de setup n'existe. Sans setup préalable, `/azd-setup` reste à l'étape 4 du chemin normal.
 3. Classer la demande par capacité (`code-change | investigation | human-surface | release-ops | skill-mutation`) et par risque (`rapid | standard | critical`).
 4. Choisir le playbook correspondant. Copier ses étapes telles quelles dans la liste de tâches. Marquer `skip: <raison>` pour toute étape non exécutée.
+4bis. Insérer `$structurer-code-azd` avant la construction seulement lorsque le changement traverse une frontière de module, ajoute une forme de donnée ou laisse un choix de structure ouvert.
 5. Appliquer la politique de `.azdone/trust.yaml` à chaque action sensible (voir [references/trust-policy.md](references/trust-policy.md)). `auto` : exécuter et journaliser. `conditional` : vérifier le témoin `.azdone/conditions-ok` (écrit par `reviser-qualite-azd` via `azd-trust-guard.py witness`) puis exécuter ou demander. `ask` : poser une seule question matérielle avec recommandation, meilleure alternative et statu quo. `never` : refuser et proposer la voie humaine.
 6. Ne jamais bloquer sur une question dont la réponse est observable par un prototype, un test ou une mesure.
 7. Terminer par le verdict honnête (`verified | partial | blocked | failed`), les preuves fraîches, la ligne de ledger et `next_safe_action`.

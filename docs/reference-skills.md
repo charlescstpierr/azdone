@@ -9,7 +9,7 @@ Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 | `azd` | point d’entrée pour toute demande de travail rigoureux (`/azd`, `$azd`) | playbook choisi, liste de tâches, verdict honnête |
 | `azd-setup` | première configuration ou relecture de `.azdone/trust.yaml` (`/azd-setup`, `$azd-setup`) | trust.yaml écrit, adaptateurs détectés, `next_safe_action` |
 
-## Les 17 skills
+## Les 18 skills
 
 | Repère | Skill | À utiliser quand… | Sortie principale |
 | --- | --- | --- | --- |
@@ -20,6 +20,7 @@ Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 | 04 | `diagnostiquer-probleme-azd` | la cause d’un échec est inconnue | diagnostic prouvé, sans patch |
 | 05 | `concevoir-experience-azd` | une surface humaine ou son interaction change | directions, prototype ou wireframe, décision |
 | 06 | `planifier-travail-azd` | dépendances, cartes, preuve ou reprise doivent être ordonnées | DAG, cartes, ownership, Proof Contract |
+| 06b | `structurer-code-azd` | un changement traverse une frontière de module, ajoute une forme de donnée, ou laisse le choix entre plusieurs structures | formes de données, frontières, ADR, unités vérifiables |
 | 07 | `isoler-travail-azd` | des tranches ou hypothèses sont réellement indépendantes | branches/worktrees, lane ledger, checkpoints |
 | 08 | `construire-solution-azd` | un plan ou test rouge est prêt pour un patch minimal | changement RED-GREEN-REFACTOR |
 | 09 | `prouver-resultat-azd` | un claim doit être déclaré terminé | matrice claim-by-claim et verdict |
