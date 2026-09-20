@@ -10,7 +10,7 @@ Toutes les modifications notables du package public sont documentées ici.
 
 ## 0.2.0-preview (2026-09-19)
 
-- Couche d'entrée `/azd` et `/azd-setup` par-dessus les 16 skills existants,
+- Couche d'entrée `/azd` et `/azd-setup` par-dessus les 17 skills existants,
   avec neuf playbooks (dont `prototype`, code jetable pour trancher une
   question par la mesure) et cinq rôles de sous-agents (`azd-scout`,
   `azd-builder`, `azd-verifier`, `azd-reviewer`, `azd-watcher`).
@@ -20,6 +20,10 @@ Toutes les modifications notables du package public sont documentées ici.
   bypassable, valeur `never` (refusé, un humain l'exécute lui-même) pour
   `credentials`, `delete_data` et `rewrite_shared_history`, confiance gagnée
   après 5 runs `verified` consécutifs.
+- Nouveau skill `verifier-application-azd` : génère un skill repo-local
+  `verifier-<app>` qui lance et exerce l'application réelle en isolation ;
+  `prouver-resultat-azd` l'exécute pour tout claim sur une surface
+  exécutable ; feature map déplacée dans ce skill.
 - Témoin `.azdone/conditions-ok`, écrit par la review finale et vérifié par
   le hook contre `conditions:` pour un `merge` `conditional`; promotion et
   rétrogradation automatiques d'`autonomy:` par la seule voie outillée

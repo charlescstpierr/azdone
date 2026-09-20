@@ -9,7 +9,7 @@ Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 | `azd` | point d’entrée pour toute demande de travail rigoureux (`/azd`, `$azd`) | playbook choisi, liste de tâches, verdict honnête |
 | `azd-setup` | première configuration ou relecture de `.azdone/trust.yaml` (`/azd-setup`, `$azd-setup`) | trust.yaml écrit, adaptateurs détectés, `next_safe_action` |
 
-## Les 16 skills
+## Les 17 skills
 
 | Repère | Skill | À utiliser quand… | Sortie principale |
 | --- | --- | --- | --- |
@@ -29,6 +29,7 @@ Le numéro est un repère visuel. Le token public reste le nom français ASCII.
 | 13 | `conserver-apprentissages-azd` | une preuve peut devenir un apprentissage borné | learning record sourcé et révocable |
 | 14 | `ameliorer-workflow-azd` | des signaux répétés justifient une mutation protégée | keep, discard, rollback ou human-gate |
 | Socle | `verifier-readiness-azd` | moyens, accès, données, outils ou preuve peuvent manquer | Readiness Forecast frais |
+| Socle | `verifier-application-azd` | quand une fonctionnalité doit être prouvée sur l'application réelle | skill repo-local verifier-<app>, matrice app_verification, feature map |
 
 ## Composition
 

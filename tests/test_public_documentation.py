@@ -42,7 +42,7 @@ class PublicDocumentationTests(unittest.TestCase):
             for path in (ROOT / "skills").iterdir()
             if path.is_dir() and re.fullmatch(r"[a-z0-9-]+-azd", path.name)
         )
-        self.assertEqual(16, len(skill_names))
+        self.assertEqual(17, len(skill_names))
         missing = [name for name in skill_names if f"`{name}`" not in reference]
         self.assertEqual([], missing)
 

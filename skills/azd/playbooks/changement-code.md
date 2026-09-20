@@ -6,7 +6,7 @@
 2. `$inspecter-projet-azd` rassemble les faits du dépôt avant tout plan.
 3. `$planifier-travail-azd` ordonne cartes, dépendances et Proof Contract.
 4. `$construire-solution-azd` implémente la plus petite solution valide dans le write scope accepté.
-5. `$prouver-resultat-azd` sépare preuve fonctionnelle et readiness d'approbation. Une revendication de performance porte la mesure avant/après sur le même banc, jamais une estimation.
+5. `$prouver-resultat-azd` (via `$verifier-application-azd executer` pour toute surface exécutable) sépare preuve fonctionnelle et readiness d'approbation. Une revendication de performance porte la mesure avant/après sur le même banc, jamais une estimation.
 6. `$reviser-qualite-azd` lance une review indépendante (`author_id != reviewer_id`).
 7. `$livrer-changement-azd` intègre selon `.azdone/trust.yaml` : `actions.commit` et `actions.push` gouvernent chaque écriture.
 

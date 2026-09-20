@@ -36,7 +36,7 @@ Lire [proof-matrix.md](references/proof-matrix.md) pour choisir une preuve adapt
 11. Si délégué à un sous-agent, suivre `skills/azd/references/context-packet.md` et `model-routing.md` pour le rôle correspondant.
 12. Construire un `evidence_graph` (claim, source, artifact, oracle ; supports, contradicts, derived_from, supersedes ; stale, superseded, contradicted, `revalidation_condition`).
 13. Rendre trois verdicts distincts : `functional_proof` (le produit fait-il ce qui est promis), `approval_readiness` (le bundle satisfait-il les exigences actuelles des écosystèmes ciblés) et `external_approval` (une autorité externe l'a-t-elle réellement approuvé ; sans soumission et verdict observé, rester `not-requested`).
-14. Après un `functional_proof` rendu, mettre à jour la feature map ([feature-map-template.md](references/feature-map-template.md)) ; elle documente la dernière preuve, jamais un substitut à une preuve fraîche.
+14. Pour tout claim qui porte sur l'application réelle, appeler `$verifier-application-azd executer` (lancer l'application en isolation, exercer la fonctionnalité, capturer l'artefact) ; il met à jour la feature map tenue par ce skill, qui documente la dernière preuve, jamais un substitut à une preuve fraîche. Un claim prouvé seulement sur un mock ou un test unitaire ne peut pas passer `functional_proof: verified` quand une surface exécutable existe.
 15. En cas d'échec, identifier la première hypothèse causalement invalidée et la gate de retour, sans renvoyer systématiquement au build.
 16. Classer le drift et marquer toute affirmation non prouvée `partial`, `blocked` ou `failed`.
 

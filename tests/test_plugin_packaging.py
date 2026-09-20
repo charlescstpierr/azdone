@@ -142,7 +142,7 @@ class InstallScriptTests(unittest.TestCase):
 
             skill_dirs = [p for p in (target / ".claude/skills").iterdir() if p.is_dir()]
             azdone_skill_dirs = [p for p in skill_dirs if p.name != "autre-skill"]
-            self.assertEqual(18, len(azdone_skill_dirs))
+            self.assertEqual(19, len(azdone_skill_dirs))
 
             agent_files = list((target / ".claude/agents").glob("*.md"))
             self.assertEqual(5, len(agent_files))
@@ -170,7 +170,7 @@ class InstallScriptTests(unittest.TestCase):
             self.assertTrue((target / ".claude/skills/autre-skill/SKILL.md").is_file())
 
             skill_dirs = [p for p in (target / ".cursor/skills").iterdir() if p.is_dir()]
-            self.assertEqual(18, len(skill_dirs))
+            self.assertEqual(19, len(skill_dirs))
 
             agent_files = list((target / ".cursor/agents").glob("*.md"))
             self.assertEqual(5, len(agent_files))
@@ -204,7 +204,7 @@ class InstallScriptTests(unittest.TestCase):
             self.assertTrue((target / ".claude/skills/autre-skill/SKILL.md").is_file())
 
             skill_dirs = [p for p in (target / ".agents/skills").iterdir() if p.is_dir()]
-            self.assertEqual(18, len(skill_dirs))
+            self.assertEqual(19, len(skill_dirs))
 
             self.assertFalse((target / ".agents/agents").exists())
 

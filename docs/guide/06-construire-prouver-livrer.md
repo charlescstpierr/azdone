@@ -29,6 +29,18 @@ verdict.
 freshness`. Un verdict `verified` exige une preuve fraîche pour chaque claim
 requis ; un `partial` ou un `blocked` porte toujours un `next_safe_action`.
 
+## Vérifier l'application réelle
+
+`initialiser-projet-azd` génère une fois le skill repo-local
+`verifier-<app>` ; `prouver-resultat-azd` l'exécute (`$verifier-application-azd
+executer`) pour tout claim sur une surface exécutable, jamais contre la
+production, un compte réel ou des credentials. Une observation impossible
+rend `blocked`, jamais `verified` : « inconclusive » n'est pas un succès.
+
+```text
+$verifier-application-azd executer "export CSV, filtre par date, erreur sur date invalide"
+```
+
 ## Réviser
 
 `reviser-qualite-azd` est indépendant : `author_id != reviewer_id`. Il rend

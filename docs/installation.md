@@ -91,8 +91,8 @@ Cursor n’a pas été exécuté.
 
 ## Vérifier l’installation
 
-Le dépôt cible doit contenir 16 dossiers de skills existants, plus `azd` et
-`azd-setup`, soit 18 dossiers au total :
+Le dépôt cible doit contenir 17 dossiers de skills existants, plus `azd` et
+`azd-setup`, soit 19 dossiers au total :
 
 ```bash
 find .agents/skills -mindepth 1 -maxdepth 1 -type d \
@@ -115,7 +115,7 @@ Puis :
    ailleurs dans le projet (un autre plugin, un skill local) peut masquer
    celui d’AZDone. Listez `/skills` (ou l’équivalent de votre hôte) et
    cherchez un doublon avant de soupçonner l’installation.
-3. Revérifiez le compte de dossiers ci-dessus : un total différent de 18
+3. Revérifiez le compte de dossiers ci-dessus : un total différent de 19
    signale une copie partielle plutôt qu’un problème de découverte.
 
 ## Mettre à jour
@@ -135,7 +135,7 @@ skills ne doit pas réinitialiser silencieusement les conventions du projet.
 
 ## Retirer AZDone
 
-Avant toute suppression, vérifiez que le dossier ne contient que les 16 skills
+Avant toute suppression, vérifiez que le dossier ne contient que les 17 skills
 copiés. Retirez ensuite chaque dossier `*-azd` explicitement avec votre méthode
 de suppression habituelle.
 

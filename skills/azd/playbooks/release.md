@@ -2,7 +2,7 @@
 
 **Livrer, surveiller, ne jamais dépasser l'autorité déclarée.**
 
-1. `$prouver-resultat-azd` confirme la preuve fonctionnelle et la readiness d'approbation.
+1. `$prouver-resultat-azd` (via `$verifier-application-azd executer` pour toute surface exécutable) confirme la preuve fonctionnelle et la readiness d'approbation.
 2. `$reviser-qualite-azd` confirme la review indépendante requise par le risque.
 3. `$livrer-changement-azd` intègre. `actions.push` et `actions.open_pr` gouvernent chaque écriture externe. `actions.merge` : `auto` livre, `conditional` livre seulement si le témoin `.azdone/conditions-ok` est frais (CI verte, review acceptée, moins de 30 minutes), `ask` pose la question, `never` refuse.
 4. `actions.deploy` de `.azdone/trust.yaml` gouverne tout déploiement selon la même logique.

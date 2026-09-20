@@ -12,7 +12,7 @@ Humain
 Host compatible : Codex, Claude Code, Cursor, autre host Agent Skills
   │ charge les skills et exécute Git, shell, navigateur, tests, subagents
   ▼
-AZDone : 16 SKILL.md + références, agents/*, hooks/* optionnels
+AZDone : 17 SKILL.md + références, agents/*, hooks/* optionnels
   │ prescrit routes, cartes, gates, preuves, handoffs et limites
   ▼
 Dépôt utilisateur
@@ -28,7 +28,7 @@ Dépôt utilisateur
 
 ## Couche d’entrée
 
-`/azd` (couche par-dessus les 16 skills, ne les remplace pas) lit
+`/azd` (couche par-dessus les 17 skills, ne les remplace pas) lit
 `.azdone/trust.yaml`, classe la demande par capacité et par risque, choisit un
 des huit playbooks, et applique la politique de confiance à chaque action
 sensible. `/azd-setup` écrit ou met à jour ce fichier de façon idempotente.
@@ -54,6 +54,9 @@ l’hôte. Cette couche est remplaçable et versionnable.
 
 Les décisions, cartes, preuves et checkpoints restent repo-locaux. Une
 installation globale ne crée jamais d’état global partagé entre projets.
+Le skill `verifier-application-azd` prolonge cette règle : il écrit le skill
+repo-local `verifier-<app>` et les artefacts `.azdone/proofs/` directement
+dans le dépôt utilisateur, jamais dans l'installation AZDone elle-même.
 
 ### 3. Exécution
 

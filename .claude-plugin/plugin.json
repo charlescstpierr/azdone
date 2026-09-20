@@ -2,7 +2,7 @@
   "name": "azdone",
   "displayName": "AZDone",
   "version": "0.2.0-preview",
-  "description": "Couche d'entree /azd par-dessus 16 Agent Skills de realisation, avec politique de confiance declarative.",
+  "description": "Couche d'entree /azd par-dessus 17 Agent Skills de realisation, avec politique de confiance declarative.",
   "author": {
     "name": "Charles St-Pierre"
   },

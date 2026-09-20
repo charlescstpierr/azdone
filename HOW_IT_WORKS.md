@@ -103,7 +103,9 @@ claim → oracle → outil → environnement → accès/données → artefact �
 Le preflight remonte tôt les besoins comme Playwright pour un site, un client
 isolé pour Telegram, les comptes ou API, les appareils/simulateurs mobiles, les
 datasets, licences, coûts et délais. Il recommande une option et un repli, mais
-n'installe rien et n'utilise aucun credential sans autorité.
+n'installe rien et n'utilise aucun credential sans autorité. Pour une preuve
+fonctionnelle sur une surface exécutable, `verifier-application-azd` lance et
+exerce l'application réelle en isolation, jamais contre la production.
 
 Trois verdicts restent distincts:
 

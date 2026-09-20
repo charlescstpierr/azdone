@@ -1,6 +1,6 @@
 # Feature map (gabarit)
 
-Registre repo-local des fonctionnalités et de leur dernière preuve fonctionnelle observée. Amorcé une fois par `initialiser-projet-azd` (étape 7), mis à jour par `prouver-resultat-azd` après chaque `functional_proof`.
+Registre repo-local des fonctionnalités et de leur dernière preuve fonctionnelle observée. Amorcée par `verifier-application-azd generer` (appelé par `initialiser-projet-azd`, étape 7), mise à jour par `verifier-application-azd executer` à chaque preuve fonctionnelle demandée par `prouver-resultat-azd`.
 
 ```yaml
 features:
@@ -26,7 +26,7 @@ features:
 
 ## Règles
 
-- Une entrée est amorcée par `initialiser-projet-azd` avec `statut: never` dès qu'une fonctionnalité connue existe dans le System Success Map ou le contrat public.
-- `prouver-resultat-azd` met à jour l'entrée correspondante à chaque `functional_proof` rendu, jamais à partir d'une déclaration non vérifiée.
+- Une entrée est amorcée par `verifier-application-azd generer` avec `statut: never` dès qu'une fonctionnalité connue existe dans le System Success Map ou le contrat public.
+- `verifier-application-azd executer` met à jour l'entrée correspondante à chaque preuve fonctionnelle rendue, jamais à partir d'une déclaration non vérifiée.
 - La feature map n'est jamais un substitut à une preuve fraîche : un `statut: verified` périmé (commit différent, environnement changé) doit être relu comme `stale` avant tout usage dans un verdict.
 - Aucune fonctionnalité listée ici ne peut justifier `Done` sans une preuve fraîche correspondante dans le run courant.
