@@ -59,6 +59,10 @@ EM_DASH_EXCLUDED_FILES = {
     ROOT / "hooks" / "azd-trust-guard.py",
 }
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
+EM_DASH_SCAN_FILES = [
+    ROOT / "docs" / "parcours.md",
+    ROOT / "skills" / "verifier-application-azd" / "references" / "preuve-visuelle.md",
+]
 
 
 def read_text(path: Path) -> str:
@@ -187,6 +191,10 @@ class EntryModeSkillTests(unittest.TestCase):
                 if EM_DASH in line:
                     failures.append(f"CHANGELOG.md:{lineno}")
 
+        for path in EM_DASH_SCAN_FILES:
+            if path.is_file() and EM_DASH in read_text(path):
+                failures.append(str(path.relative_to(ROOT)))
+
         self.assertEqual([], failures)
 
     def test_record_and_witness_cited_in_azd_skill(self) -> None:
@@ -199,6 +207,23 @@ class EntryModeSkillTests(unittest.TestCase):
         text = read_text(RUN_AUTONOME)
         header = "ts\trun_id\titeration\tdecision\talternative_rejetee\tpreuve\tpredicat_avance"
         self.assertIn(header, text)
+
+    def test_ecriture_humaine_reference_exists_and_stays_short(self) -> None:
+        path = AZD_SKILL / "references" / "ecriture-humaine.md"
+        self.assertTrue(path.is_file())
+        text = read_text(path)
+        line_count = len(text.splitlines())
+        self.assertLessEqual(line_count, 100, f"ecriture-humaine.md has {line_count} lines")
+
+        tell_bullets = re.findall(r"(?m)^\d+\.\s", text)
+        self.assertGreaterEqual(len(tell_bullets), 20, "expected at least 20 numbered tells")
+
+    def test_ecriture_humaine_is_cited_by_deliver_and_retain_bundles(self) -> None:
+        from _skill_helpers import read_skill_bundle
+
+        for name in ("livrer-changement-azd", "conserver-apprentissages-azd"):
+            bundle = read_skill_bundle(name)
+            self.assertIn("ecriture-humaine", bundle, f"{name} bundle does not cite ecriture-humaine.md")
 
 
 class TrustAndModelDocTests(unittest.TestCase):

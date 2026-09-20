@@ -44,6 +44,9 @@ class IntelligenceSkillContractTests(unittest.TestCase):
         self.assertIn("supply-chain", text)
         self.assertIn("stop when sufficient", text)
         self.assertIn("evidence", text)
+        self.assertIn("active_work", text)
+        self.assertIn("open_prs", text)
+        self.assertIn("overlap", text)
         self.assertNotIn("[TODO:", text)
 
     def test_m04_diagnose_contract_is_root_cause_only(self) -> None:

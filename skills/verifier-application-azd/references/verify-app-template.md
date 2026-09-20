@@ -23,6 +23,10 @@ Généré par `verifier-application-azd` le <date> sur le commit <sha>. Surfaces
 
 ## Observer
 
+Le protocole de preuve visuelle annotée (`manifest.json`, `report.md`, sous
+`.azdone/proofs/<date ISO>/`) vit dans
+`skills/verifier-application-azd/references/preuve-visuelle.md`.
+
 - Web : `<navigateur piloté (Playwright) ; viewports 1280x800 et 390x844 ; clavier ; capture .png>`
 - API : `<curl ou client HTTP ; schéma attendu ; codes d'erreur>`
 - CLI ou TUI : `<commande ; stdout et stderr séparés ; exit code ; 80x24 et 120x40 ; SIGINT>`

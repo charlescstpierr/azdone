@@ -13,6 +13,11 @@ discovery:
   repository: ""
   base_commit: ""
   worktree: ""
+  active_work:
+    open_prs: []
+    branches: []
+    uncommitted: []
+    overlap: []
   environment_preflight:
     repository_root: ""
     git_state: ""

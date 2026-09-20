@@ -35,6 +35,21 @@ class AppVerificationSkillTests(unittest.TestCase):
         bundle = read_skill_bundle("prouver-resultat-azd")
         self.assertIn("$verifier-application-azd executer", bundle)
 
+    def test_visual_proof_reference_exists_and_covers_the_manifest_schema(self) -> None:
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        path = root / "skills/verifier-application-azd/references/preuve-visuelle.md"
+        self.assertTrue(path.is_file())
+        text = path.read_text(encoding="utf-8")
+
+        for token in ("manifest.json", "report.md", "redacted", "test_start", "assertion"):
+            self.assertIn(token, text)
+
+    def test_prove_bundle_cites_the_visual_proof_reference(self) -> None:
+        bundle = read_skill_bundle("prouver-resultat-azd")
+        self.assertIn("preuve-visuelle", bundle)
+
     def test_init_skill_invokes_verify_application_generer(self) -> None:
         bundle = read_skill_bundle("initialiser-projet-azd")
         self.assertIn("$verifier-application-azd generer", bundle)

@@ -26,7 +26,7 @@ Artefact attendu : candidats `keep`, `discard`, `rollback` ou `insufficient-evid
 3. Séparer capture, promotion et récupération : une observation entre d'abord comme `candidate`, jamais directement comme politique.
 4. Noter la `provenance` exacte : run, commit, artefact, auteur, oracle et date.
 5. Marquer `insufficient-evidence` pour anecdote, single preference ou source unverifiable ; never promote anecdotal evidence to universal policy.
-6. Écrire un `claim` falsifiable avec le `scope` le plus étroit compatible avec les preuves, puis calibrer `confidence` depuis qualité, répétition et indépendance des sources.
+6. Écrire un `claim` falsifiable avec le `scope` le plus étroit compatible avec les preuves, en suivant `skills/azd/references/ecriture-humaine.md` pour la formulation, puis calibrer `confidence` depuis qualité, répétition et indépendance des sources.
 7. Ajouter `counterexample`, `expiry` ou `revalidation_condition`, et une `future decision` concrète.
 8. Construire un `evidence_graph` (nœuds `claim`, `source`, `artifact`, `oracle` ; arêtes `supports`, `contradicts`, `derived_from`, `supersedes`) et classer le drift (`stale`, `superseded`, `contradicted`, `temporal_regression`, `negation_artifact`) en utilisant `revalidation_condition` au lieu d'une règle permanente.
 9. Chercher chaque `conflict` avant acceptation ; préserver l'historique au lieu d'écraser silencieusement.

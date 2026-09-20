@@ -26,7 +26,8 @@ Ce que vous allez apprendre :
    des erreurs à éviter.
 
 Lisez les pages dans l'ordre la première fois. Ensuite, chacune se suffit à
-elle-même.
+elle-même. [Le parcours AZDone en une page](../parcours.md) résume les cinq
+temps sans repasser par ce guide.
 
 ## Si vous ne retenez qu'une chose
 

@@ -33,7 +33,7 @@ Lire [bootstrap-contract.md](references/bootstrap-contract.md) avant toute écri
 9. Amorcer seulement le minimum connu de la Boussole, du langage, de la System Success Map et du graphe ; les skills suivants les enrichiront sans relancer l'init.
 10. Pour chaque convention matérielle non résolue, griller une seule décision à la fois avec recommandation, meilleure alternative, statu quo et trade-offs (coût, délai, complexité, risque, réversibilité, impact sur le graphe).
 11. Montrer le bloc de contrôle et les fichiers proposés avant écriture ; ne jamais écraser un fichier humain existant sans décision explicite.
-12. Écrire les conventions et pointeurs repo-locaux en suivant les pratiques du dépôt, en utilisant `.azdone/` seulement si aucun emplacement plus approprié n'existe ; le skill set reste globalement installable mais Boussole, cartes, décisions, forecasts et preuves restent repo-locaux.
+12. Écrire les conventions et pointeurs repo-locaux en suivant les pratiques du dépôt, en utilisant `.azdone/` seulement si aucun emplacement plus approprié n'existe ; le skill set reste globalement installable mais Boussole, cartes, décisions, forecasts et preuves restent repo-locaux ; proposer un `PARCOURS.md` repo-local à partir de `docs/parcours.md`.
 13. Appeler `$verifier-readiness-azd` une première fois, créer le checkpoint initial et remettre le contrôle à `$piloter-workflow-azd`.
 
 ## Sortie

@@ -70,7 +70,7 @@ Toujours-pause (`always_pause`) : force-push sur branche partagée, suppression 
 
 ## Écrire la réponse
 
-Phrases courtes et déclaratives. Pas de tiret cadratin. Pas de deux-points connecteur en milieu de phrase. Chaque affirmation porte sa preuve ou son étiquette (`observé`, `inféré`, `supposé`). Le verdict, les preuves et `next_safe_action` restent en clair.
+Phrases courtes et déclaratives. Pas de tiret cadratin. Pas de deux-points connecteur en milieu de phrase. Chaque affirmation porte sa preuve ou son étiquette (`observé`, `inféré`, `supposé`). Le verdict, les preuves et `next_safe_action` restent en clair. Ces règles s'étendent aux commits, PR, notes de release, apprentissages et docs dans [references/ecriture-humaine.md](references/ecriture-humaine.md).
 
 ## Langue
 

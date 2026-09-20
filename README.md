@@ -129,6 +129,7 @@ Chaque skill reste invocable seul, sans passer par `/azd`. Voir la
 ## Documentation
 
 - [Le guide AZDone](docs/guide/README.md)
+- [Le parcours AZDone en une page](docs/parcours.md)
 - [Installation, mise à jour et désinstallation](docs/installation.md)
 - [Architecture](docs/architecture.md)
 - [Référence des skills](docs/reference-skills.md)

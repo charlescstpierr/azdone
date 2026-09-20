@@ -28,7 +28,7 @@ Artefact attendu : `checkpoint`, `fresh verification` sur l'`integrated result`,
 5. Intégrer avec des opérations Git réversibles ; résoudre un conflit seulement si le comportement attendu est prouvé, puis comparer le diff final aux scopes acceptés et signaler toute modification inattendue.
 6. Lancer une `fresh verification` sur le vrai `integrated result`, jamais seulement sur les branches sources ou des stale logs, en rejouant les checks natifs pertinents (tests, protected suite, types, lint, build, migrations, smoke et visuel si applicable).
 7. Produire un `context handoff` autonome avec état, commandes, artefacts, risques, prochaine transition, rollback conditions et le dernier `handoff_carryover` ; aucun champ requis ne peut être reconstruit silencieusement.
-8. Préparer documentation utile, migration/rollback guidance, `release notes`, canary, monitoring et `remaining risks`.
+8. Préparer documentation utile, migration/rollback guidance, `release notes`, canary, monitoring et `remaining risks` ; écrire les `release notes` et le corps de la pull request selon `skills/azd/references/ecriture-humaine.md`.
 9. Gate séparément `push`, `pull request`, `merge`, `submit-for-approval` et `deploy` ; sans autorité, retourner `authority-request`. L'autorité explicite se lit dans `.azdone/trust.yaml` (`actions.<action>`) quand ce fichier existe ; sinon `authority-request`.
 10. Traiter une soumission externe et son verdict comme des événements distincts : ne jamais transformer `approval_readiness: ready` en `external_approval: approved`.
 

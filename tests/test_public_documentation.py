@@ -21,6 +21,7 @@ class PublicDocumentationTests(unittest.TestCase):
             "docs/architecture.md",
             "docs/reference-skills.md",
             "docs/validation.md",
+            "docs/parcours.md",
         )
         missing = [path for path in required if not (ROOT / path).is_file()]
         self.assertEqual([], missing)

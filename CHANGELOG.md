@@ -48,6 +48,17 @@ Toutes les modifications notables du package public sont documentées ici.
   l'architecture, de la référence des skills et de la validation.
 - Section « Trust policy » dans `CONTRACTS.md`.
 - Suite `tests/test_plugin_packaging.py`.
+- Protocole de preuve visuelle annotée dans `verifier-application-azd` :
+  `.azdone/proofs/<date ISO>/` avec `manifest.json` (schéma pas à pas) et
+  `report.md` généré, repli transcript horodaté plus captures quand aucun
+  outil d'enregistrement n'existe.
+- Référence partagée `skills/azd/references/ecriture-humaine.md` : tells
+  d'IA à retirer avec exemple avant/après, boucle en trois passes, étendue
+  aux commits, PR, notes de release et apprentissages.
+- `inspecter-projet-azd` inventorie PR ouvertes, branches actives et travail
+  non commité avant tout plan ; un chevauchement direct rend `blocked`.
+- `docs/parcours.md` : le parcours AZDone en cinq temps sur une page, avec
+  une section à copier en `PARCOURS.md` repo-local.
 
 ## 0.1.0-preview — 2026-07-26
 

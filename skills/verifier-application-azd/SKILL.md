@@ -36,7 +36,7 @@ Artefact attendu : un skill repo-local `verifier-<app>/SKILL.md` (mode `generer`
 
 6. Lire `verifier-<app>/SKILL.md` ; s'il manque ou si la surface a changé, repasser par `generer` ou `maintenir` avant toute preuve.
 7. Démarrer l'application en isolation (port dédié, données de test, jamais la production, jamais un compte réel), attendre la condition de santé, sinon rendre `blocked` avec la cause.
-8. Pour chaque fonctionnalité demandée, exécuter l'observation décrite, comparer au résultat attendu, capturer un artefact horodaté sous `.azdone/proofs/<date>/` (capture, transcript, réponse HTTP, log) et noter le commit vérifié.
+8. Pour chaque fonctionnalité demandée, exécuter l'observation décrite, comparer au résultat attendu, capturer un artefact horodaté sous `.azdone/proofs/<date>/` (capture, transcript, réponse HTTP, log) et noter le commit vérifié. Suivre le protocole [preuve-visuelle.md](references/preuve-visuelle.md) pour le `manifest.json`, le `report.md` et l'enregistrement d'écran optionnel.
 9. Exercer aussi les états non nominaux listés dans la carte : vide, erreur, saisie invalide, interruption, taille de terminal pour une CLI.
 10. Arrêter l'application, mettre à jour la feature map avec commit, date, artefact et statut, puis rendre la matrice `app_verification`.
 
