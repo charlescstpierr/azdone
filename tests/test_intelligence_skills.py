@@ -1,22 +1,15 @@
 import unittest
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-
-
-def read_skill(name: str) -> str:
-    return (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+from _skill_helpers import assert_language_rule, read_skill, read_skill_bundle
 
 
 class IntelligenceSkillContractTests(unittest.TestCase):
     def test_m02_understand_contract_is_concise_and_bilingual(self) -> None:
-        text = read_skill("clarifier-objectif-azd").lower()
+        skill_text = read_skill("clarifier-objectif-azd")
+        text = read_skill_bundle("clarifier-objectif-azd").lower()
 
-        self.assertNotIn("provisional", text)
-        self.assertIn("français", text)
-        self.assertIn("english", text)
+        self.assertNotIn("provisional", skill_text.lower())
+        assert_language_rule(self, text)
         self.assertIn("outcome contract", text)
         self.assertIn("blind spots", text)
         self.assertIn("blind_spots: []", text)
@@ -28,11 +21,11 @@ class IntelligenceSkillContractTests(unittest.TestCase):
         self.assertNotIn("[TODO:", text)
 
     def test_m03_discover_contract_is_evidence_first_and_safe(self) -> None:
-        text = read_skill("inspecter-projet-azd").lower()
+        skill_text = read_skill("inspecter-projet-azd")
+        text = read_skill_bundle("inspecter-projet-azd").lower()
 
-        self.assertNotIn("provisional", text)
-        self.assertIn("français", text)
-        self.assertIn("english", text)
+        self.assertNotIn("provisional", skill_text.lower())
+        assert_language_rule(self, text)
         self.assertIn("repository", text)
         self.assertIn("primary sources", text)
         self.assertIn("trianguler", text)
@@ -51,14 +44,17 @@ class IntelligenceSkillContractTests(unittest.TestCase):
         self.assertIn("supply-chain", text)
         self.assertIn("stop when sufficient", text)
         self.assertIn("evidence", text)
+        self.assertIn("active_work", text)
+        self.assertIn("open_prs", text)
+        self.assertIn("overlap", text)
         self.assertNotIn("[TODO:", text)
 
     def test_m04_diagnose_contract_is_root_cause_only(self) -> None:
-        text = read_skill("diagnostiquer-probleme-azd").lower()
+        skill_text = read_skill("diagnostiquer-probleme-azd")
+        text = read_skill_bundle("diagnostiquer-probleme-azd").lower()
 
-        self.assertNotIn("provisional", text)
-        self.assertIn("français", text)
-        self.assertIn("english", text)
+        self.assertNotIn("provisional", skill_text.lower())
+        assert_language_rule(self, text)
         self.assertIn("reproduce", text)
         self.assertIn("isolate", text)
         self.assertIn("hypothesis ledger", text)

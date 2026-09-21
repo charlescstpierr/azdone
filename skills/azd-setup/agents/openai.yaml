@@ -1,0 +1,4 @@
+interface:
+  display_name: "Setup · Configurer la confiance"
+  short_description: "Configurer la politique de confiance et les modèles AZDone"
+  default_prompt: "Utilise $azd-setup pour configurer la politique de confiance et le routage des modèles de ce dépôt."

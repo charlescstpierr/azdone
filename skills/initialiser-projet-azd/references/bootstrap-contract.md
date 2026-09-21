@@ -65,6 +65,18 @@ descendants concernés. Les skills courants marquent `stale` et recalculent les
 artefacts affectés sans relancer l'init ni réécrire silencieusement une
 convention approuvée.
 
+## Recherche et capacités
+
+Réutiliser d'abord dépôt, documentation, outils, skills et mémoire locale.
+Chercher en ligne seulement quand l'information est instable, externe, inconnue
+ou qu'une meilleure pratique actuelle peut changer la décision. Préférer
+documentation officielle, standards et dépôts sources: X, Hacker News et
+tendances sont des signaux, pas des preuves. Ne jamais installer un outil,
+accepter une licence, créer un compte, utiliser des credentials ou toucher la
+production sans l'autorité requise. Si une capacité manque, créer un gap
+explicite avec recommandation et solution de repli; ne pas attendre
+l'exécution du ticket pour l'annoncer.
+
 ## Gate de sortie
 
 `ready-for-workflow` exige:

@@ -5,11 +5,16 @@ du dépôt de construction.
 
 ## Inclus
 
-- `skills/` complet;
+- `skills/` complet, y compris `azd` et `azd-setup`;
+- `agents/` (définitions de sous-agents) et `hooks/` (garde-fous optionnels,
+  jamais requis);
+- `.claude-plugin/`, `.cursor-plugin/` et `scripts/install.sh`;
 - README français et anglais;
-- documentation d’installation, d’architecture, de référence et de validation;
+- documentation d’installation, d’architecture, de référence et de validation,
+  et le guide `docs/guide/`;
 - contrats publics `CONTRACTS.md` et `HOW_IT_WORKS.md`;
-- 63 tests de contrats publics;
+- tests de contrats publics, y compris l’empaquetage et la politique de
+  confiance;
 - fichiers GitHub de contribution, support et sécurité;
 - changelog et gitignore public.
 

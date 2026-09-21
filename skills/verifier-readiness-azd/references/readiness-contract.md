@@ -68,6 +68,6 @@ Une carte ne devient `Ready` que si:
 4. outil, accès, environnement, données et oracle sont prêts;
 5. les routes de contexte nécessaires sont résolues;
 6. le forecast est frais;
-7. l'autorité nécessaire est présente.
+7. l'autorité nécessaire est présente. L'autorité explicite se lit dans `.azdone/trust.yaml` (`actions.<action>`) quand ce fichier existe ; sinon `authority-request`.
 
 Avant `Done`, vérifier que le moyen annoncé a effectivement produit la preuve attendue. Ne jamais substituer un mock, une installation ou un test inférieur à la preuve contractuelle sans rouvrir la décision.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Socle · Vérifier l'application réelle"
+  short_description: "Lancer et exercer l'application pour prouver qu'elle marche"
+  default_prompt: "Utilise $verifier-application-azd pour générer la carte de vérification du projet puis prouver chaque fonctionnalité sur l'application réelle."

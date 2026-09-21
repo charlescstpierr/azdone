@@ -21,6 +21,8 @@ class PublicDocumentationTests(unittest.TestCase):
             "docs/architecture.md",
             "docs/reference-skills.md",
             "docs/validation.md",
+            "docs/parcours.md",
+            "docs/glossaire.md",
         )
         missing = [path for path in required if not (ROOT / path).is_file()]
         self.assertEqual([], missing)
@@ -42,7 +44,7 @@ class PublicDocumentationTests(unittest.TestCase):
             for path in (ROOT / "skills").iterdir()
             if path.is_dir() and re.fullmatch(r"[a-z0-9-]+-azd", path.name)
         )
-        self.assertEqual(16, len(skill_names))
+        self.assertEqual(18, len(skill_names))
         missing = [name for name in skill_names if f"`{name}`" not in reference]
         self.assertEqual([], missing)
 

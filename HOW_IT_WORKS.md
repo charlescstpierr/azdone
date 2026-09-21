@@ -5,6 +5,17 @@ daemon, dashboard, base de données ni dépendance obligatoire. Le host compatib
 exécute les outils, Git et les éventuels subagents; les skills prescrivent les
 décisions, gates, artefacts et preuves.
 
+## Entrée par `/azd`
+
+`/azd` lit `.azdone/trust.yaml` (absent: propose `/azd-setup`, continue en
+`assisted` déclaré), classe la demande par capacité et par risque, choisit un
+des huit playbooks, puis copie ses étapes dans une liste de tâches. Chaque
+action sensible passe par la politique de confiance: `auto` s'exécute et se
+journalise, `conditional` vérifie ses conditions, `ask` pose une question
+matérielle, `never` refuse et propose la voie humaine. `/azd` compose les 16
+skills ci-dessous; il ne les remplace pas, et chacun reste invocable seul.
+Voir le [guide](docs/guide/README.md) et [CONTRACTS.md](CONTRACTS.md#trust-policy).
+
 ## Première entrée dans un dépôt
 
 Après installation du skill set, lancer une seule fois:
@@ -92,7 +103,9 @@ claim → oracle → outil → environnement → accès/données → artefact �
 Le preflight remonte tôt les besoins comme Playwright pour un site, un client
 isolé pour Telegram, les comptes ou API, les appareils/simulateurs mobiles, les
 datasets, licences, coûts et délais. Il recommande une option et un repli, mais
-n'installe rien et n'utilise aucun credential sans autorité.
+n'installe rien et n'utilise aucun credential sans autorité. Pour une preuve
+fonctionnelle sur une surface exécutable, `verifier-application-azd` lance et
+exerce l'application réelle en isolation, jamais contre la production.
 
 Trois verdicts restent distincts:
 

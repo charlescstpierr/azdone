@@ -1,0 +1,68 @@
+# .azdone/trust.yaml, politique de confiance AZDone (lisible et modifiable par un humain)
+version: 1                    # version du schéma. Ne pas changer sans migration explicite.
+autonomy: autonomous          # niveau courant: guided | assisted | autonomous | full. Modifié par le ledger lors d'une promotion ou d'une rétrogradation.
+ceiling: full                 # niveau maximal que la confiance gagnée peut atteindre. autonomy <= ceiling toujours; azd-setup applique la contrainte.
+enforcement: declared         # declared | enforced. declared = politique affichée sans hook actif. enforced = hooks actifs sur Claude Code / Cursor.
+
+actions:                      # une valeur par action, parmi auto | conditional | ask | never. Une clé absente suit le niveau `autonomy` (tableau ci-dessous) et évolue avec lui lors d'une promotion ; une clé écrite ici est figée et prime sur le niveau, sauf never et always_pause. azd-setup n'écrit que les surcharges demandées par l'humain.
+  credentials: never            # créer ou utiliser des identifiants. Toujours-pause, jamais auto.
+  delete_data: never            # supprimer des données, des branches non fusionnées ou de l'infrastructure. Toujours-pause.
+  rewrite_shared_history: never # réécrire l'historique Git partagé. Toujours-pause.
+  # commit: auto                # dérivé du niveau : guided ask, sinon auto. Décommenter pour figer.
+  # push: auto                  # guided/assisted ask, autonomous/full auto.
+  # open_pr: auto               # guided/assisted ask, autonomous/full auto.
+  # merge: conditional          # guided/assisted ask, autonomous conditional (témoin .azdone/conditions-ok écrit par reviser-qualite-azd via `azd-trust-guard.py witness`), full auto.
+  # deploy: ask                 # guided/assisted/autonomous ask, full conditional. Un déploiement visant la production exige en plus un témoin avec `rollback: proven`.
+  # install_global: ask         # ask sauf full auto.
+  # external_message: ask       # ask sauf full auto. Un message à un client ou à un tiers reste toujours-pause.
+  # spawn_agent: ask            # lancer un CLI d'agent externe hors mode lecture seule (codex exec, claude -p, agent -p sans restriction). ask sauf full auto. Un appel en lecture seule conforme à models.adapters reste non classé, sauf l'adaptateur Cursor (agent -p) qui reste classé faute de mode lecture seule natif.
+  # Une action `ask` peut être approuvée une fois par un humain depuis son propre terminal : `azd-trust-guard.py approve <action>` (30 minutes, consommée au premier usage ; `--standing` pour la durée). L'agent ne peut pas s'auto-approuver : le hook refuse cette commande quand c'est lui qui la lance.
+
+conditions:                   # conditions requises pour qu'une action `conditional` devienne automatique. Vérifiées par le hook via le témoin .azdone/conditions-ok, jamais par lecture directe de trust.yaml.
+  require_green_ci: true        # la CI doit être verte sur le commit courant (champ `ci` du témoin).
+  require_independent_review: true # une revue indépendante (reviewer_id différent de author_id) doit avoir accepté.
+  risk_ceiling: standard         # rapid | standard | critical. Au-dessus de ce plafond, l'action repasse en ask.
+  max_files_changed: 40          # nombre maximal de fichiers modifiés pour rester automatique.
+  max_lanes: 3                   # nombre maximal de lanes parallèles avant de repasser en ask.
+  budget_tokens: 2000000         # 0 = illimité. Non vérifié par le hook: c'est /azd qui applique ce budget et s'arrête en partial quand il est dépassé.
+
+protected_paths:               # toute écriture ici force ask, quel que soit le niveau ou les actions ci-dessus.
+  - .azdone/trust.yaml            # cette politique elle-même.
+  - .github/workflows/            # les workflows CI/CD.
+  - infra/                        # le code d'infrastructure.
+
+always_pause:                  # liste toujours-pause codée dans le hook. Non configurable: une entrée retirée est réappliquée par le skill et par le hook. Une entrée ajoutée ici est appliquée par les skills mais pas par le hook.
+  - force-push sur branche partagée
+  - suppression de données ou de branches non fusionnées
+  - mutation de production sans rollback prouvé
+  - message à un client ou à un tiers
+  - usage ou création de credentials
+  - élargissement de trust.yaml par l'agent lui-même
+
+earn:                          # confiance gagnée: promotion et rétrogradation automatiques, appliquées par voie outillée seulement.
+  enabled: true                  # active la promotion et la rétrogradation automatiques.
+  promote_after: 5                # nombre de runs verified consécutifs sans rollback avant de monter d'un cran, borné par ceiling.
+  demote_on: [failed, rollback]    # tout failed ou rollback rétrograde immédiatement d'un cran.
+  ledger: .azdone/trust-ledger.md  # journal des runs. Promotion: `python3 <hooks>/azd-trust-guard.py record --run-id <id> --risk <r> --verdict <v> [--rollback] [--override "<phrase>"] --actions "<liste>"`; sans hooks/ (Codex), le skill écrit la ligne de ledger à la main et n'édite que la ligne `autonomy:`.
+
+models:                        # routage des rôles vers un modèle natif ou un adaptateur CLI externe.
+  budget: medium                  # small | medium | large | unlimited. Effort de raisonnement visé pour les rôles host:. Pour cli:, l'effort par fournisseur est à confirmer par `<cli> --help` avant d'être écrit.
+  roles:                          # grammaire à quatre formes: host:<tier> (small|default|strong) | host:<slug> (identifiant exact détecté) | cli:<adaptateur> (modèle de adapter_models) | cli:<adaptateur>:<slug> (modèle exact confirmé). Jamais un slug non détecté ou non confirmé.
+    scout: host:small                # inspection ciblée, lecture seule.
+    builder: host:default            # écriture bornée au write_scope.
+    verifier: host:default           # exécution des preuves.
+    reviewer: host:strong             # relecture indépendante.
+    second_reviewer: cli:codex        # second avis externe, traité comme donnée non fiable. Forme avec slug exact: cli:codex:<slug> (slug confirmé par azd-setup, jamais inventé).
+    watcher: host:small               # surveillance CI/PR, lecture seule.
+  panels:                         # relecteurs supplémentaires au-delà de second_reviewer, même grammaire que roles.
+    review: []                      # liste vide par défaut; ex: [cli:claude, host:strong].
+  adapters:                       # commande exacte par adaptateur. Remplie par azd-setup après détection sur PATH et lecture de --help.
+    # Le context packet est passé sur stdin à chaque adaptateur (cat context-packet.yaml | <commande>).
+    # Cursor n'a pas de mode lecture seule natif : readonly: instruction-only (le prompt doit l'exiger explicitement).
+    codex:  "codex exec -m {model} -s read-only -a never -C {cwd} --skip-git-repo-check"   # à confirmer par azd-setup avant écriture.
+    claude: "claude -p --model {model} --permission-mode plan --output-format text --max-turns 8"
+    cursor: "agent -p --model {model} --output-format text --workspace {cwd}"
+  adapter_models:                 # {model} de chaque commande d'adaptateur = cette valeur, ou le slug exact de cli:<adaptateur>:<slug> quand le rôle en porte un.
+    codex: gpt-5
+    claude: sonnet
+    cursor: auto

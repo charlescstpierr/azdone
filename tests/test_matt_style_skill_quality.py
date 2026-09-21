@@ -3,6 +3,7 @@ import re
 import unittest
 from pathlib import Path
 
+from _skill_helpers import read_skill_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
@@ -44,8 +45,8 @@ def default_prompt(openai_yaml: Path) -> str:
 class MattStyleSkillQualityTests(unittest.TestCase):
     maxDiff = None
 
-    def test_all_16_azdone_skill_directories_are_present(self) -> None:
-        self.assertEqual(16, len(skill_dirs()))
+    def test_all_18_azdone_skill_directories_are_present(self) -> None:
+        self.assertEqual(18, len(skill_dirs()))
 
     def test_descriptions_explain_capability_and_use_when_trigger(self) -> None:
         failures = []
@@ -129,12 +130,22 @@ class MattStyleSkillQualityTests(unittest.TestCase):
         failures = []
 
         allowed = {"SKILL.md", "agents/openai.yaml"}
-        for skill in skill_dirs():
+        # `skills/azd/` is the only skill allowed a `playbooks/` directory
+        # (see DESIGN.md); it does not match the `<verbe>-<objet>-azd`
+        # naming used by skill_dirs(), so it is checked in addition to it.
+        target_dirs = list(skill_dirs())
+        azd_dir = SKILLS / "azd"
+        if azd_dir.is_dir():
+            target_dirs.append(azd_dir)
+
+        for skill in target_dirs:
             for path in skill.rglob("*"):
                 if not path.is_file():
                     continue
                 relative = path.relative_to(skill).as_posix()
                 if relative in allowed or relative.startswith("references/"):
+                    continue
+                if skill.name == "azd" and relative.startswith("playbooks/"):
                     continue
                 failures.append(f"{skill.name}: unexpected runtime artifact {relative}")
                 if os.access(path, os.X_OK):
@@ -143,10 +154,14 @@ class MattStyleSkillQualityTests(unittest.TestCase):
         self.assertEqual([], failures)
 
     def test_routing_remains_domain_agnostic_and_m05_is_conditional(self) -> None:
+        # m01's routing anchors are asserted on SKILL.md itself (protected,
+        # see DESIGN.md); the domain-agnostic wording for m02/m03/m06 can
+        # live in SKILL.md or move into references/ during compaction, so
+        # those three read the full bundle instead.
         m01 = read_text(SKILLS / "piloter-workflow-azd" / "SKILL.md")
-        m02 = read_text(SKILLS / "clarifier-objectif-azd" / "SKILL.md")
-        m03 = read_text(SKILLS / "inspecter-projet-azd" / "SKILL.md")
-        m06 = read_text(SKILLS / "planifier-travail-azd" / "SKILL.md")
+        m02 = read_skill_bundle("clarifier-objectif-azd")
+        m03 = read_skill_bundle("inspecter-projet-azd")
+        m06 = read_skill_bundle("planifier-travail-azd")
 
         domain_terms = (
             ("product", "produit"),

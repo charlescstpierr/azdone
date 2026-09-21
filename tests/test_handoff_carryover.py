@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+from _skill_helpers import read_skill_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,8 +31,8 @@ class HandoffCarryoverContractTests(unittest.TestCase):
         self.assertIn("handoff_outputs", planning)
 
     def test_verify_and_ship_fail_closed_on_evidence_loss(self):
-        verify = (ROOT / "skills/prouver-resultat-azd/SKILL.md").read_text(encoding="utf-8")
-        ship = (ROOT / "skills/livrer-changement-azd/SKILL.md").read_text(encoding="utf-8")
+        verify = read_skill_bundle("prouver-resultat-azd")
+        ship = read_skill_bundle("livrer-changement-azd")
         self.assertIn("carryover_gate", verify)
         self.assertIn("dropped_fields", verify)
         self.assertIn("handoff_carryover", ship)

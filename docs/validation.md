@@ -11,7 +11,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 Elle vérifie notamment :
 
-- 16 dossiers de skills et leurs métadonnées;
+- 18 dossiers de skills et leurs métadonnées;
 - descriptions avec déclencheurs explicites;
 - quick starts et prompts publics;
 - références locales résolues;
@@ -21,6 +21,35 @@ Elle vérifie notamment :
 - readiness, reprise, progression et preuve;
 - review indépendante;
 - aucun script/runtime dans `skills/`.
+
+`tests/test_trust_policy.py` vérifie la sémantique de `.azdone/trust.yaml` :
+les quatre niveaux, la table `actions:`, la liste `always_pause` non
+contournable, la confiance gagnée (promotion après 5 runs `verified`
+consécutifs, rétrogradation immédiate sur `failed` ou rollback), et le
+comportement du hook `hooks/azd-trust-guard.sh` via des entrées JSON
+fabriquées (`declared` laisse passer, `enforced` bloque une action `ask` ou
+`never`, `always_pause` bloque même si `actions.*: auto`).
+
+`tests/test_entry_mode.py` vérifie le skill `azd` : son frontmatter, ses huit
+playbooks, la classification par capacité et par risque, et l’absence
+d’autorité accordée par un texte de skill.
+
+`tests/test_plugin_packaging.py` vérifie l’empaquetage : les deux manifestes
+et `marketplace.json` sont du JSON valide, portent la même version, cohérente
+avec `CHANGELOG.md`; `scripts/install.sh` est exécutable, ne supprime jamais
+rien, et passe `bash -n`; le guide `docs/guide/` est complet et ses liens
+relatifs résolvent; le README mentionne `/azd`, `/azd-setup` et `trust.yaml`.
+
+## Ce que la CI prouve
+
+`.github/workflows/tests.yml` s'exécute sur `push` et `pull_request`, sur
+Python 3.11 et 3.12. Elle prouve que la suite publique passe sur les deux
+versions ciblées, que `scripts/install.sh` et `hooks/azd-trust-guard.sh`
+passent `bash -n`, que `hooks/azd-trust-guard.py` compile
+(`py_compile`), et que les trois manifestes (`plugin.json` Claude Code,
+`marketplace.json`, `plugin.json` Cursor) sont du JSON valide. Elle ne
+prouve rien de plus : ni le comportement du hook sur un vrai hôte, ni
+l'installation par un humain.
 
 ## Ce que la validation structurelle prouve
 

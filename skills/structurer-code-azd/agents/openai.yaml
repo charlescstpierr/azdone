@@ -1,0 +1,4 @@
+interface:
+  display_name: "06b · Structurer le code"
+  short_description: "Décider la structure du code avant d'écrire une ligne"
+  default_prompt: "Utilise $structurer-code-azd pour décider la structure du code (formes de données, frontières, invariants) avant le patch."

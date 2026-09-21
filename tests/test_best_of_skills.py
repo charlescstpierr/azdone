@@ -1,22 +1,6 @@
-import re
 import unittest
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-
-
-def skill_path(name: str) -> Path:
-    return SKILLS / name / "SKILL.md"
-
-
-def read_skill(name: str) -> str:
-    return skill_path(name).read_text(encoding="utf-8")
-
-
-def normalized(text: str) -> str:
-    return re.sub(r"\s+", " ", text.lower())
+from _skill_helpers import normalized, read_skill_bundle
 
 
 class BestOfSkillRegressionTests(unittest.TestCase):
@@ -30,7 +14,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         self.assertEqual(missing, [], f"missing concepts: {missing}")
 
     def test_m01_routes_wayfinder_and_domain_model_modes_through_existing_skills(self) -> None:
-        text = read_skill("piloter-workflow-azd")
+        text = read_skill_bundle("piloter-workflow-azd")
 
         self.assertConcepts(
             text,
@@ -46,7 +30,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m01_routes_by_capability_and_keeps_design_conditional(self) -> None:
-        text = read_skill("piloter-workflow-azd")
+        text = read_skill_bundle("piloter-workflow-azd")
 
         self.assertConcepts(
             text,
@@ -65,7 +49,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m02_asks_one_adaptive_question_per_round_with_confidence_zero_assumption_and_domain_model(self) -> None:
-        text = read_skill("clarifier-objectif-azd")
+        text = read_skill_bundle("clarifier-objectif-azd")
 
         self.assertConcepts(
             text,
@@ -86,7 +70,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         self.assertNotIn("confidence >=", text.lower())
 
     def test_m06_wayfinder_mode_covers_destination_fog_frontier_decisions_tracker_fallback_and_resume(self) -> None:
-        text = read_skill("planifier-travail-azd")
+        text = read_skill_bundle("planifier-travail-azd")
 
         self.assertConcepts(
             text,
@@ -103,7 +87,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m06_devex_mode_is_surface_specific_for_cli_api_and_sdk_contracts(self) -> None:
-        text = read_skill("planifier-travail-azd")
+        text = read_skill_bundle("planifier-travail-azd")
 
         self.assertConcepts(
             text,
@@ -125,9 +109,9 @@ class BestOfSkillRegressionTests(unittest.TestCase):
     def test_series_uses_surface_specific_overlays_for_any_kind_of_output(self) -> None:
         text = "\n".join(
             (
-                read_skill("piloter-workflow-azd"),
-                read_skill("planifier-travail-azd"),
-                read_skill("prouver-resultat-azd"),
+                read_skill_bundle("piloter-workflow-azd"),
+                read_skill_bundle("planifier-travail-azd"),
+                read_skill_bundle("prouver-resultat-azd"),
             )
         )
 
@@ -148,7 +132,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m05_design_requires_ascii_wireframes_for_cli_tui_surfaces(self) -> None:
-        text = read_skill("concevoir-experience-azd")
+        text = read_skill_bundle("concevoir-experience-azd")
 
         self.assertConcepts(
             text,
@@ -161,7 +145,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m05_design_compares_three_directions_for_material_decisions(self) -> None:
-        text = read_skill("concevoir-experience-azd")
+        text = read_skill_bundle("concevoir-experience-azd")
 
         self.assertConcepts(
             text,
@@ -174,7 +158,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m06_plan_freezes_exact_commands_and_paths_before_execution(self) -> None:
-        text = read_skill("planifier-travail-azd")
+        text = read_skill_bundle("planifier-travail-azd")
 
         self.assertConcepts(
             text,
@@ -190,7 +174,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         self.assertRegex(text, r"(?is)(paths|chemins):\s*\[")
 
     def test_m07_branch_lab_requires_host_observed_agents_and_fresh_agent_per_task_when_relevant(self) -> None:
-        text = read_skill("isoler-travail-azd")
+        text = read_skill_bundle("isoler-travail-azd")
 
         self.assertConcepts(
             text,
@@ -205,7 +189,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m10_review_runs_spec_compliance_then_code_quality_with_distinct_people(self) -> None:
-        text = read_skill("reviser-qualite-azd")
+        text = read_skill_bundle("reviser-qualite-azd")
 
         self.assertConcepts(
             text,
@@ -221,7 +205,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         self.assertRegex(text, r"(?is)(spec-compliance|contract-completeness|contract/spec compliance).*(code-quality|qualité du code|quality/correctness)")
 
     def test_m09_verify_covers_terminal_checks_only_when_cli_tui_surface_exists(self) -> None:
-        text = read_skill("prouver-resultat-azd")
+        text = read_skill_bundle("prouver-resultat-azd")
 
         self.assertConcepts(
             text,
@@ -238,7 +222,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m13_learn_treats_memory_as_optional_not_a_runtime_dependency(self) -> None:
-        text = read_skill("conserver-apprentissages-azd")
+        text = read_skill_bundle("conserver-apprentissages-azd")
 
         self.assertConcepts(
             text,
@@ -252,7 +236,7 @@ class BestOfSkillRegressionTests(unittest.TestCase):
         )
 
     def test_m14_evolve_keeps_evaluation_protected_before_scoring_or_promotion(self) -> None:
-        text = read_skill("ameliorer-workflow-azd")
+        text = read_skill_bundle("ameliorer-workflow-azd")
 
         self.assertConcepts(
             text,
