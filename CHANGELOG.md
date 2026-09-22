@@ -4,6 +4,7 @@ Toutes les modifications notables du package public sont documentées ici.
 
 ## Unreleased
 
+- `docs/POSITIONNEMENT.md` : le créneau d'AZDone, ses non-objectifs explicites (piles de PR outillées, catalogue de principes, runtime, orchestration multi-worktree outillée), la règle d'évolution et les conditions de cohabitation avec d'autres jeux de skills. Document requis par la suite publique.
 - Licence stable à sélectionner.
 - Pilot 0 humain à exécuter sur un dépôt frais.
 - Compatibilité comportementale Claude Code à vérifier.
