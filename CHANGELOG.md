@@ -4,13 +4,27 @@ Toutes les modifications notables du package public sont documentées ici.
 
 ## Unreleased
 
-- Portage multi-hôte : quatre trous d'hôte identifiés (install globale des
-  skills, sous-agents natifs Codex derrière `multi_agent`, pointeur permanent
-  sous Codex, cache des modèles détectés par machine). Décision écrite dans
-  `docs/decisions/0001-portage-multi-hote-et-etat-par-machine.md` : les faits
-  de machine vont dans `~/.azdone/host-capabilities.json`, les décisions
-  restent dans `.azdone/trust.yaml`. Quatre probes sur une vraie session Codex
-  restent à exécuter avant toute implémentation.
+- Portage multi-hôte, quatre trous comblés par détection au runtime, décision
+  dans `docs/decisions/0001-portage-multi-hote-et-etat-par-machine.md` :
+  - `scripts/install.sh --global` installe les skills dans la configuration
+    personnelle de l'hôte (`~/.claude`, `~/.cursor`, `~/.agents`), par lien
+    symbolique ou par copie avec `--copy`. La portée projet reste le défaut.
+    Le script ne supprime jamais un dossier réel ni un lien qu'il n'a pas posé :
+    il liste les conflits et sort en erreur.
+  - `azd-setup` lit `~/.codex/config.toml` en lecture seule pour détecter
+    `multi_agent = true` et router les rôles `host:` sous Codex. Il n'écrit
+    jamais ce fichier : une configuration globale relève de `install_global`.
+    Le flag rend les sous-agents possibles, il ne les prouve pas, et un run
+    sans sous-agent retombe sur `subagents-unavailable`.
+  - `azd-setup` met en cache les probes de machine dans
+    `~/.azdone/host-capabilities.json` (faits seulement, rejoués au-delà de
+    30 jours) pour ne plus reposer la même question à chaque dépôt. Les
+    décisions restent dans `.azdone/trust.yaml`, seul fichier versionné et
+    seul fichier lu par le hook.
+  - Le pointeur permanent couvre les trois hôtes, fichier de contrôle du
+    projet d'abord, fichier global seulement sur demande explicite.
+  - Quatre probes sur une vraie session Codex restent dus : ils confirment ce
+    que le code détecte, ils ne le débloquent pas.
 - Licence stable à sélectionner.
 - Pilot 0 humain à exécuter sur un dépôt frais.
 - Compatibilité comportementale Claude Code à vérifier.

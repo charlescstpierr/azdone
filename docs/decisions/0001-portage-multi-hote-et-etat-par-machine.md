@@ -1,6 +1,8 @@
 # 0001. Portage multi-hôte : état par machine, sous-agents Codex, install global
 
-- Statut : décidé, implémentation non commencée.
+- Statut : décidé et implémenté par détection au runtime. Les probes de
+  confirmation restent en attente (voir décision 2 et « Ce qui reste non
+  prouvé »).
 - Date : 2026-09-22.
 - Surfaces visées : `scripts/install.sh`, `skills/azd-setup/SKILL.md`,
   `docs/guide/04-modeles-et-sous-agents.md`, `docs/installation.md`.
@@ -51,20 +53,12 @@ Copier le mémo pstack casserait trois invariants posés par le projet :
 Décision retenue : AZDone écrit un cache par machine qui ne contient **que
 des faits sondés**, jamais une décision.
 
-```json
-{
-  "schema": 1,
-  "probed_at": "2026-09-22T14:03:11Z",
-  "host": "codex",
-  "host_version": "<sortie exacte de --version>",
-  "adapters": {
-    "codex": {"path": "/usr/local/bin/codex", "command_confirmed": true},
-    "claude": {"path": "/opt/node22/bin/claude", "command_confirmed": true}
-  },
-  "models_probed_ok": ["gpt-5-codex"],
-  "native_subagents": "unknown"
-}
-```
+Le schéma qui fait foi est celui de
+[host-capabilities.md](../../skills/azd-setup/references/host-capabilities.md),
+lu et écrit par `azd-setup`. En résumé : `schema`, `probed_at`, `hosts_seen`,
+`adapters` (chemin, `--help` confirmé, commande retenue), `models_probed_ok`
+par adaptateur, et `codex_multi_agent`. Aucun slug n'y est inscrit sans avoir
+été confirmé par un run réel, comme l'exige `azd-setup` §6.
 
 Emplacement : `~/.azdone/host-capabilities.json`, hôte-agnostique, un seul
 fichier pour les trois hôtes.
@@ -97,15 +91,29 @@ chemin, et la désinstallation le retire. Un cache absent, illisible ou d'un
 Les quatre faits pstack viennent d'une lecture, pas d'une mesure faite par ce
 dépôt. `azd-setup` §6 et §7 et la note `VERIFIED_FORMATS` de
 `scripts/install.sh` imposent la même discipline à AZDone qu'aux modèles
-qu'il pilote. Aucun des quatre n'entre dans le guide ni dans le code avant
-d'être prouvé sur une vraie session Codex.
+qu'il pilote.
 
-| Fait à prouver | Protocole | Atterrit dans |
+Formulation initiale : aucun des quatre n'entre dans le guide ni dans le code
+avant d'être prouvé sur une vraie session Codex. Elle s'est révélée trop
+grossière, et l'implémentation a retenu la règle plus précise qui la remplace :
+
+> Aucun fait non prouvé n'est **affirmé**. Un fait non prouvé peut entrer sous
+> forme de **détection au runtime avec repli explicite**, jamais sous forme
+> d'assertion.
+
+C'est le pattern `adapter-unavailable` déjà en place. Concrètement :
+`azd-setup` lit `~/.codex/config.toml` et enregistre ce qu'il y trouve, sans
+jamais affirmer que le flag livre des sous-agents ; `install.sh --global`
+pose les skills sous Codex et demande à l'humain de confirmer lui-même que
+l'hôte les lit. Chaque probe du tableau ci-dessous reste dû, et ferme une
+question ouverte au lieu de débloquer une écriture.
+
+| Fait à prouver | Protocole | Ce que le probe ferme |
 | --- | --- | --- |
-| `~/.agents/skills/` est bien lu par Codex | y installer un skill témoin, lancer Codex, vérifier qu'il est listé | `install.sh --global codex`, `docs/installation.md` |
-| Nom rendu d'un skill global | observer le token exact (`azdone:azd` ou `$azd`) | `docs/installation.md`, tokens publics de `CONTRIBUTING.md` |
-| `multi_agent = true` donne des sous-agents natifs | poser le flag, lancer une tâche à deux sous-tâches, observer deux agents réels | `docs/guide/04`, mapping `host:<tier>` sous Codex |
-| Précédence global contre projet | installer les deux, modifier un mot dans l'un, voir lequel est lu | `docs/installation.md`, `azd-setup` |
+| `~/.agents/skills/` est bien lu par Codex | y installer un skill témoin, lancer Codex, vérifier qu'il est listé | retire l'avertissement « confirmez vous-même » de `install.sh --global codex` |
+| Nom rendu d'un skill global | observer le token exact (`azdone:azd` ou `$azd`) | fixe la commande documentée dans `docs/installation.md` |
+| `multi_agent = true` donne des sous-agents natifs | poser le flag, lancer une tâche à deux sous-tâches, observer deux agents réels | remplace « possible » par « livré » dans `docs/guide/04` |
+| Précédence global contre projet | installer les deux, modifier un mot dans l'un, voir lequel est lu | ajoute une section de résolution de conflit à `docs/installation.md` |
 
 Le deuxième point est le plus coûteux s'il est ignoré : `CONTRIBUTING.md`
 impose de conserver les tokens publics `<verbe>-<objet>-azd`. Si une install
@@ -159,18 +167,22 @@ trois.
 
 ## Ce qui reste non prouvé
 
-- Les quatre faits du tableau de la décision 2, tous.
+- Les quatre faits du tableau de la décision 2, tous. Le code les détecte et
+  retombe proprement ; aucun n'est mesuré.
 - L'existence d'un mécanisme de réveil sous Codex : `docs/guide/04` le marque
   déjà « à vérifier », `multi_agent` ne le change pas tant qu'il n'est pas
   mesuré.
-- Le comportement de `azd-setup` quand le cache décrit une machine dont les
-  CLI ont été désinstallés depuis : couvert par la revalidation `PATH`, non
-  encore testé.
+- Le comportement de `azd-setup` sur une machine dont les CLI ont été
+  désinstallés depuis le dernier cache : la revalidation `PATH` le couvre par
+  construction, mais aucun `azd-setup` réel n'a encore tourné sur un cache
+  périmé, puisque le cache est décrit en instructions et non en code exécuté
+  par le dépôt.
+- Le Pilot 0 reste dû. Ce changement ne le rapproche pas.
 
 ## Prochaines actions
 
 1. Exécuter les quatre probes de la décision 2 sur une machine avec Codex.
-2. Selon leur résultat, ouvrir un changement par décision, avec son test de
-   régression, plutôt qu'un seul gros changement.
-3. Ne toucher à `docs/guide/04-modeles-et-sous-agents.md` qu'après le probe
-   `multi_agent`.
+2. Fermer chaque question du tableau par un changement séparé, avec son test
+   de régression.
+3. Le probe `multi_agent` est le plus rentable : c'est le seul qui transforme
+   un repli en capacité réelle.

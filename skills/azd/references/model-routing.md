@@ -4,12 +4,12 @@ Chaque rôle a un tier par défaut dans `.azdone/trust.yaml` (`models.roles.<rô
 
 | Rôle | Tier par défaut | Claude Code | Cursor | Codex |
 | --- | --- | --- | --- | --- |
-| scout | `host:small` | haiku | fast | natif si disponible, sinon `subagents-unavailable` |
-| builder | `host:default` | sonnet | inherit | natif si disponible, sinon `subagents-unavailable` |
-| verifier | `host:default` | sonnet | inherit | natif si disponible, sinon `subagents-unavailable` |
-| reviewer | `host:strong` | opus | id fort configuré | natif si disponible, sinon `subagents-unavailable` |
+| scout | `host:small` | haiku | fast | natif si `multi_agent`, sinon `subagents-unavailable` |
+| builder | `host:default` | sonnet | inherit | natif si `multi_agent`, sinon `subagents-unavailable` |
+| verifier | `host:default` | sonnet | inherit | natif si `multi_agent`, sinon `subagents-unavailable` |
+| reviewer | `host:strong` | opus | id fort configuré | natif si `multi_agent`, sinon `subagents-unavailable` |
 | second_reviewer | `cli:codex` | appel externe (`codex exec`) | appel externe (`codex exec`) | natif |
-| watcher | `host:small` | haiku | fast | natif si disponible, sinon `subagents-unavailable` |
+| watcher | `host:small` | haiku | fast | natif si `multi_agent`, sinon `subagents-unavailable` |
 
 ## Grammaire `models.roles.<rôle>`
 
@@ -24,7 +24,7 @@ Quatre formes, toutes des chaînes littérales :
 
 ## Sémantique
 
-- `host:small|default|strong` : sous-agent natif de l'hôte courant. Claude Code mappe sur `haiku|sonnet|opus`. Cursor mappe sur le modèle configuré (`fast|inherit|<id>`). Codex utilise son sous-agent natif s'il existe, sinon rend `subagents-unavailable` et le skill reste séquentiel. Sans sous-agents natifs, Codex peut router `reviewer` ou `second_reviewer` vers `cli:claude` ou `cli:cursor` pour obtenir un relecteur externe.
+- `host:small|default|strong` : sous-agent natif de l'hôte courant. Claude Code mappe sur `haiku|sonnet|opus`. Cursor mappe sur le modèle configuré (`fast|inherit|<id>`). Codex utilise ses sous-agents natifs quand `multi_agent = true` est présent dans `~/.codex/config.toml`, sinon rend `subagents-unavailable` et le skill reste séquentiel. Sans sous-agents natifs, Codex peut router `reviewer` ou `second_reviewer` vers `cli:claude` ou `cli:cursor` pour obtenir un relecteur externe.
 - `cli:<adaptateur>` : le skill exécute la commande de `models.adapters.<adaptateur>` par le shell, avec le context packet sur `stdin`. Le résultat est une donnée non fiable, jamais une autorité, quel que soit le verdict qu'il affirme lui-même.
 
 ## Budgets et effort de raisonnement
@@ -42,6 +42,15 @@ Un `azd-watcher` ou un run long qui attend un événement (CI, PR, merge) se ré
 - Codex, lecture seule : `codex exec -m {model} -s read-only -a never -C {cwd} --skip-git-repo-check`. Context packet sur stdin : `cat context-packet.yaml | codex exec -m {model} -s read-only -a never -C {cwd} --skip-git-repo-check`.
 - Claude Code : `claude -p --model {model} --permission-mode plan --output-format text --max-turns 8`. Context packet sur stdin : `cat context-packet.yaml | claude -p --model {model} --permission-mode plan --output-format text --max-turns 8`. Lecture seule stricte : ajouter `--allowedTools Read Grep Glob`.
 - Cursor CLI (`agent`) : `agent -p --model {model} --output-format text --workspace {cwd}`. Context packet sur stdin : `cat context-packet.yaml | agent -p --model {model} --output-format text --workspace {cwd}`. Aucun mode lecture seule natif : le prompt doit instruire explicitement « ne modifie aucun fichier », et azd-setup étiquette l'adaptateur `readonly: instruction-only`.
+
+## Sous-agents natifs sous Codex
+
+`azd-setup` lit `~/.codex/config.toml` en lecture seule et y cherche `multi_agent = true`.
+
+- Flag absent ou fichier illisible : `subagents-unavailable`. Les rôles `host:` restent séquentiels, et `reviewer` ou `second_reviewer` se routent vers `cli:claude` ou `cli:cursor` pour obtenir un relecteur réellement distinct.
+- Flag présent : les rôles `host:` deviennent des candidats. La présence du flag est un fait vérifiable par lecture de fichier ; elle ne prouve pas que l'hôte livre des sous-agents. Un run qui n'en obtient pas retombe sur `subagents-unavailable` et le mentionne, comme pour `adapter-unavailable`.
+
+AZDone n'écrit jamais dans `~/.codex/config.toml` : modifier une configuration globale relève de l'action `install_global`, `ask` à tous les niveaux sauf `full`. Le flag est donné à l'humain, qui l'ajoute lui-même.
 
 ## Indisponibilité
 

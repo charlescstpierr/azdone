@@ -20,6 +20,37 @@ cible, et copie les sous-agents `agents/*.md` vers `.claude/agents` ou
 `.cursor/agents` (Codex n’a pas de sous-agents dédiés). Il est idempotent et
 ne supprime jamais rien.
 
+## Portée globale, en option
+
+La portée projet reste le défaut et le mode recommandé. Si vous voulez les
+skills dans tous vos projets sans les copier un par un :
+
+```bash
+../azdone/scripts/install.sh claude --global
+```
+
+Cibles : `~/.claude/skills` et `~/.claude/agents`, `~/.cursor/skills` et
+`~/.cursor/agents`, `~/.agents/skills` pour Codex. Par défaut le script pose
+des liens symboliques vers votre clone AZDone ; `--global --copy` copie à la
+place.
+
+Le compromis à connaître : avec des liens, un `git pull` dans le clone met à
+jour tous vos projets d’un coup, et un `git checkout` dans ce même clone les
+change aussi, sans avertissement. `--copy` fige une version.
+
+Le script ne supprime jamais un dossier réel. S’il trouve à destination un
+dossier existant, ou un lien qui pointe ailleurs que vers votre clone, il
+laisse tout en place, liste les chemins concernés et sort en erreur. Seul un
+lien qu’il a lui-même posé est remplacé.
+
+Le hook de confiance n’est pas installé en portée globale : il lit le
+`.azdone/trust.yaml` du projet et se branche dans les réglages du projet.
+
+Pour Codex, la portée globale n’est pas sourcée par la documentation OpenAI,
+qui ne décrit que `.agents/skills` en repo-local. Le script vous le dit et
+vous demande de confirmer vous-même que Codex lit bien `~/.agents/skills`,
+en le lançant hors de tout dépôt AZDone et en vérifiant `/skills`.
+
 ## Avec le plugin Claude Code ou Cursor
 
 ```bash
@@ -53,6 +84,9 @@ Pourquoi repo-local :
 - le comportement est versionné avec le projet;
 - une mise à jour peut être révisée comme un diff;
 - l’état décisionnel reste dans le projet et non dans l’installation globale.
+
+Ces quatre raisons tiennent toujours : la portée globale décrite plus haut est
+une commodité pour vos propres projets, pas le mode recommandé en équipe.
 
 Source officielle :
 [OpenAI — Build skills](https://developers.openai.com/codex/skills).
@@ -151,6 +185,24 @@ Ne supprimez pas automatiquement :
 Ces artefacts appartiennent au projet. Décidez séparément de les archiver, les
 migrer ou les supprimer.
 
+Si vous aviez installé en portée globale, retirez aussi les dossiers ou liens
+`azd`, `azd-setup` et `*-azd` de `~/.claude/skills`, `~/.cursor/skills` ou
+`~/.agents/skills`, et les cartes `azd-*.md` de `~/.claude/agents` ou
+`~/.cursor/agents`.
+
+`azd-setup` garde par ailleurs un cache de capacités hors dépôt, décrit dans
+[host-capabilities.md](../skills/azd-setup/references/host-capabilities.md) :
+
+```bash
+rm -f ~/.azdone/host-capabilities.json
+rmdir ~/.azdone 2>/dev/null || true
+```
+
+Ce cache ne contient que des faits sondés sur votre machine (CLI présents,
+slugs de modèles réellement confirmés). Aucune politique de confiance n’y
+figure : elle vit dans le `.azdone/trust.yaml` de chaque projet. Le supprimer
+ne coûte qu’un nouveau sondage au prochain `azd-setup`.
+
 ## Limites de la distribution actuelle
 
 - Pas d’installateur automatisé.
@@ -161,6 +213,8 @@ migrer ou les supprimer.
 - Pas de licence de réutilisation sélectionnée à ce stade.
 - `enforcement: enforced` du hook de confiance n’existe que sous Claude Code
   et Cursor ; Codex reste en politique déclarée seulement.
+- La portée globale de `scripts/install.sh` n’est pas confirmée sous Codex :
+  la documentation OpenAI ne source que `.agents/skills` en repo-local.
 - `scripts/install.sh` copie `hooks/azd-trust-guard.sh` dans le projet cible
   et affiche le bloc `.claude/settings.json` ou `.cursor/hooks.json` à ajouter
   à la main ; il ne l’enregistre jamais lui-même.

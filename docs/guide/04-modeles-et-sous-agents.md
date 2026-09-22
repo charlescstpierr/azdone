@@ -41,8 +41,9 @@ Chaque rôle accepte une des quatre formes :
 - `cli:<adaptateur>:<slug>` : modèle exact de cet adaptateur.
 
 `host:<tier>` mappe `small|default|strong` sur `haiku|sonnet|opus` (Claude
-Code), sur le modèle configuré (Cursor), ou sur le sous-agent natif de Codex
-s'il existe, sinon `subagents-unavailable`.
+Code), sur le modèle configuré (Cursor), ou sur les sous-agents natifs de
+Codex quand `multi_agent = true` est présent dans `~/.codex/config.toml`,
+sinon `subagents-unavailable`.
 
 `cli:<adaptateur>[:<slug>]` exécute une commande externe avec le context
 packet sur stdin. Le résultat est traité comme une donnée non fiable, jamais
@@ -51,6 +52,21 @@ comme une autorité.
 `models.panels.review` est une liste vide par défaut de valeurs de la même
 grammaire : chaque entrée ajoute un relecteur supplémentaire au panel de
 review, en plus de `reviewer` et `second_reviewer`.
+
+## Sous-agents natifs sous Codex
+
+Sans `multi_agent = true` dans `~/.codex/config.toml`, les rôles `host:`
+rendent `subagents-unavailable` et le skill reste séquentiel : routez alors
+`reviewer` ou `second_reviewer` vers `cli:claude` ou `cli:cursor` pour obtenir
+un relecteur réellement distinct.
+
+`azd-setup` lit ce fichier en lecture seule et vous donne la ligne à ajouter.
+Il ne l'ajoute jamais lui-même : modifier une configuration globale relève de
+`install_global`, `ask` à tous les niveaux sauf `full`.
+
+Le flag rend les sous-agents possibles, il ne les prouve pas. Un run qui
+n'obtient pas de sous-agent retombe sur `subagents-unavailable` et le dit,
+exactement comme un adaptateur absent retombe sur `host:`.
 
 ## Détection des modèles au setup
 
@@ -61,6 +77,13 @@ présent, sinon `fast` et `inherit` ; Codex n'a pas de commande de liste
 vérifiée, `azd-setup` propose `inherit` et n'accepte un slug exact que si
 l'humain le fournit et qu'un `codex exec -m <slug>` trivial réussit. Aucun
 slug non détecté ni non confirmé n'est jamais écrit dans `trust.yaml`.
+
+Ces probes portent sur la machine, pas sur le projet. `azd-setup` les met en
+cache dans `~/.azdone/host-capabilities.json` et les rejoue au-delà de 30
+jours, pour ne pas reposer la même question à chaque nouveau dépôt. Ce cache
+ne contient que des faits sondés : aucune décision, aucun niveau d'autonomie.
+Les décisions restent dans `.azdone/trust.yaml`, seul fichier versionné et
+seul fichier que le hook lit.
 
 ## Adaptateurs vérifiés
 
