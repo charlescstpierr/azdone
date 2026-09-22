@@ -1,7 +1,7 @@
 # Router avec `/azd`
 
 `/azd` est la porte d'entrée. Vous lui donnez un objectif, il lit
-`.azdone/trust.yaml`, classe la demande, choisit un playbook parmi huit, et
+`.azdone/trust.yaml`, classe la demande, choisit un playbook parmi neuf, et
 appelle les skills AZDone dans l'ordre du playbook.
 
 ## Ce qui se passe

@@ -18,6 +18,21 @@ PLAYBOOKS = [
     "babysit-pr.md",
 ]
 
+# Les documents publics ecrivent le nombre de playbooks en toutes lettres.
+# Un playbook ajoute sans mettre a jour ces phrases fait mentir la doc :
+# babysit-pr.md est arrive alors que trois phrases disaient encore "huit".
+FRENCH_NUMBERS = {
+    "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6,
+    "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "onze": 11, "douze": 12,
+}
+PLAYBOOK_COUNT_DOCS = [
+    ROOT / "docs" / "architecture.md",
+    ROOT / "docs" / "guide" / "02-azd.md",
+    ROOT / "docs" / "reference-skills.md",
+    ROOT / "README.md",
+    ROOT / "CHANGELOG.md",
+]
+
 TRUST_SETUP_DIR = ROOT / "skills" / "azd-setup"
 TRUST_POLICY = AZD_SKILL / "references" / "trust-policy.md"
 TRUST_EXAMPLE = TRUST_SETUP_DIR / "references" / "trust.example.yaml"
@@ -87,6 +102,32 @@ def frontmatter(text: str) -> dict[str, str]:
 
 class EntryModeSkillTests(unittest.TestCase):
     maxDiff = None
+
+    def test_documented_playbook_count_matches_the_playbook_files(self) -> None:
+        real = len(list((AZD_SKILL / "playbooks").glob("*.md")))
+        self.assertEqual(len(PLAYBOOKS), real, "PLAYBOOKS a derive des fichiers")
+
+        failures = []
+        numbers = "|".join(FRENCH_NUMBERS)
+        # Les deux ordres de mots utilises dans la doc : "les huit playbooks"
+        # et "un playbook parmi huit".
+        patterns = (
+            re.compile(rf"\b({numbers})\s+playbooks?\b", re.IGNORECASE),
+            re.compile(rf"\bplaybooks?\s+parmi\s+({numbers})\b", re.IGNORECASE),
+        )
+        for path in PLAYBOOK_COUNT_DOCS:
+            if not path.is_file():
+                continue
+            for lineno, line in enumerate(read_text(path).splitlines(), start=1):
+                for pattern in patterns:
+                    for word in pattern.findall(line):
+                        if FRENCH_NUMBERS[word.lower()] != real:
+                            failures.append(
+                                f"{path.relative_to(ROOT)}:{lineno} annonce "
+                                f"'{word}' pour {real} playbooks"
+                            )
+
+        self.assertEqual([], failures)
 
     def test_skill_md_exists(self) -> None:
         self.assertTrue((AZD_SKILL / "SKILL.md").is_file())

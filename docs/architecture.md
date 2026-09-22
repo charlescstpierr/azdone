@@ -30,9 +30,9 @@ Dépôt utilisateur
 
 `/azd` (couche par-dessus les 18 skills, ne les remplace pas) lit
 `.azdone/trust.yaml`, classe la demande par capacité et par risque, choisit un
-des huit playbooks, et applique la politique de confiance à chaque action
+des neuf playbooks, et applique la politique de confiance à chaque action
 sensible. `/azd-setup` écrit ou met à jour ce fichier de façon idempotente.
-Les huit playbooks vivent dans `skills/azd/playbooks/`. Les agents
+Les neuf playbooks vivent dans `skills/azd/playbooks/`. Les agents
 (`agents/azd-scout.md`, `azd-builder.md`, `azd-verifier.md`,
 `azd-reviewer.md`, `azd-watcher.md`) portent les cinq rôles de délégation.
 Les hooks (`hooks/`) sont optionnels : sous Claude Code et Cursor, ils font
