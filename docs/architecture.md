@@ -130,7 +130,13 @@ exécuté.
 - vault Obsidian physique;
 - packs de conformité par plateforme;
 - installateur ou updater automatisé au-delà de `scripts/install.sh`;
+- install globale des skills (portée projet uniquement);
+- cache de capacités par machine pour la détection des modèles;
 - preuve Pilot 0.
 
 Ces absences sont des limites, pas des fonctions implicites.
+
+Les deux dernières font l’objet d’une décision écrite et non encore
+implémentée : [0001, portage multi-hôte et état par
+machine](decisions/0001-portage-multi-hote-et-etat-par-machine.md).
 

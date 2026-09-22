@@ -4,6 +4,13 @@ Toutes les modifications notables du package public sont documentées ici.
 
 ## Unreleased
 
+- Portage multi-hôte : quatre trous d'hôte identifiés (install globale des
+  skills, sous-agents natifs Codex derrière `multi_agent`, pointeur permanent
+  sous Codex, cache des modèles détectés par machine). Décision écrite dans
+  `docs/decisions/0001-portage-multi-hote-et-etat-par-machine.md` : les faits
+  de machine vont dans `~/.azdone/host-capabilities.json`, les décisions
+  restent dans `.azdone/trust.yaml`. Quatre probes sur une vraie session Codex
+  restent à exécuter avant toute implémentation.
 - Licence stable à sélectionner.
 - Pilot 0 humain à exécuter sur un dépôt frais.
 - Compatibilité comportementale Claude Code à vérifier.
